@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/SteveWooo/testin#readme",
   "dependencies": {
-    "ipfs": "^0.60.2"
+    "ipfs": "^0.60.2",
+    "vue": "^2.6.14"
   }
 }

@@ -1,0 +1,22 @@
+{
+  "name": "testin",
+  "version": "1.0.0",
+  "description": "基于CnF的区块链众测平台",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SteveWooo/testin.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SteveWooo/testin/issues"
+  },
+  "homepage": "https://github.com/SteveWooo/testin#readme",
+  "dependencies": {
+    "ipfs": "^0.60.2"
+  }
+}

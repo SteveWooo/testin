@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+</head>
+<body>
+
+    <input type="file" id="file">
+    <button id="submit">提交</button>
+
+    <script src="/static/lib/ipfs-http-client.min.js"></script>
+    <script>
+        (function(){
+            ipfs = window.IpfsHttpClient.create({
+                host : "localhost",
+                port : 5001
+            })
+
+            document.getElementById("submit").addEventListener("click", function(){
+                fileDom = document.getElementById("file")
+                if (fileDom.files[0] == undefined) {
+                    return 
+                }
+
+                var added = ipfs.add(fileDom.files[0], {
+                    progress : function(prog){
+                        console.log(prog)
+                    }
+                })
+                added.then(function(r) {
+                    console.log(r)
+                })
+            })
+        })()
+    </script>
+</body>
+</html>

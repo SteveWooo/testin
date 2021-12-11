@@ -16,10 +16,16 @@ var Testin = {
             // 从params中构造一个交易对象
             New : function(params){
                 function Trans(_params){
-
+                    this.Type = _params.Type
+                    if (this.Type == "RegisterHacker") {
+                        this.Hacker = _params.Hacker
+                        this.CheckSign = function(){
+                            return this.Hacker.CheckSign()
+                        }
+                    }
                 }
 
-                return Trans
+                return new Trans(params)
             },
         },
 
@@ -39,28 +45,32 @@ var Testin = {
         Hacker : {
             New : function(params){
                 function Hacker(_params){
+                    this.From = _params.From
                     this.Name = _params.Name
                     this.Resume = _params.Resume
                     this.Qualification = _params.Qualification
                     this.Ts = _params.Ts
-                    this.NodeID = _params.From
+                    
                     this.Hash = _params.Hash
+                    this.Signature = _params.Signature
                 }
 
-                Hacker.prototype.CheckSign = function(Signature){
+                Hacker.prototype.CheckSign = function(){
                     // 校验Hash
-                    var source = "Hacker" + this.Name + this.Qualification + this.Resume + this.Ts
+                    var source = "Hacker" + this.From + this.Name + this.Qualification + this.Resume + this.Ts
                     var hash = MC_Sha256(source)
                     if (this.Hash != hash) { // 哈希校验失败
-                        return 
+                        return false
                     }
 
-                    if (!MC_Secp256k1_Check(hash, Signature, this.From)) { // 签名校验失败
-                        return 
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
                     }
+
+                    return true
                 }
 
-                return Hacker
+                return new Hacker(params)
             }
         },
         Expert : {
@@ -76,9 +86,20 @@ var Testin = {
 }
 
 // 注册成为测试员
-// @params.
 exports.RegisterHacker = function(params) {
-    console.log(params.name)
+    var hacker = Testin.Class.Hacker.New(params)
+    if (hacker.CheckSign() == false) {
+        console.log("签名校验失败: RegisterHacker")
+        return 
+    }
+
+    // 加上类型，就是
+    var transParam = {
+        Type : "RegisterHacker",
+        Hacker : hacker
+    }
+    var trans = Testin.Class.Transaction.New(transParam)
+    console.log(trans.CheckSign())
 }
 
 // 注册成为专家

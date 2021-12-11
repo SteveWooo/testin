@@ -2,11 +2,12 @@
   <div id="app">
     <v-app-bar
       app
-      absolute
       dark
       dense
     >
-      <v-toolbar-title>众测平台</v-toolbar-title>
+      <v-toolbar-title>
+        众测平台
+      </v-toolbar-title>
       <v-spacer></v-spacer>
     </v-app-bar>
     

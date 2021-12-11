@@ -58,8 +58,9 @@ export default {
       common.ls.set("privateKey", this.privateKey)
       // 8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6
       // nodeID : 047204499d849948aaffdec7ce2703f5b3
-      var nodeID = window.Secp256k1.generatePublicKeyFromPrivateKeyData(window.Secp256k1.uint256(this.privateKey))
+      var nodeID = common.secp256k1.GetNodeIDFromPrivateKey(this.privateKey)
       this.nodeID = nodeID
+      console.log(nodeID)
       this.privateKey = ""
     },
     Logout : function(){

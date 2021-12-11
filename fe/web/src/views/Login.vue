@@ -19,15 +19,18 @@ export default {
         test(){
             this.axios({
                 method : "post",
-                url : window.config.baseUrl + "/api/hacker/register",
+                url : window.config.baseUrl + "/api/proxy",
                 headers : {
                     "Content-Type" : "Application/json"
                 },
                 data : JSON.stringify({
-                    "name" : "hahahahahha"
+                    "Params" : {
+                        "MC_Call" : "RegisterHacker",
+                        "name" : "SteveWooo"
+                    }
                 })
             }).then(res=>{
-                console.log(res)
+                console.log(res.data)
             }, reject=>{
                 console.log(reject)
             })

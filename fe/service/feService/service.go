@@ -16,12 +16,11 @@ func (feService *FeService) Build() {
 	feService.config = map[string]string{}
 	feService.config["httpPort"] = "10001"
 	feService.config["sdkRpcServer"] = "http://127.0.0.1:9024"
-	feService.config["privateKey"] = "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6"
 }
 
 func (feService *FeService) Run() {
-
-	http.HandleFunc("/api/hacker/register", feService.ApiHackerRegister)
+	// 注册前端代理接口
+	http.HandleFunc("/api/proxy", feService.Proxy)
 
 	// 管理静态文件目录
 	fs := http.FileServer(http.Dir("static/"))
@@ -35,7 +34,7 @@ func (feService *FeService) Run() {
 	}
 }
 
-func (feService *FeService) ApiHackerRegister(res http.ResponseWriter, req *http.Request) {
+func (feService *FeService) Proxy(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
 	res.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 
@@ -44,28 +43,25 @@ func (feService *FeService) ApiHackerRegister(res http.ResponseWriter, req *http
 		return
 	}
 
+	// 处理参数
 	req.ParseForm()
 	decoder := json.NewDecoder(req.Body)
 	var reqParams map[string]interface{}
 	decoder.Decode(&reqParams)
 
-	fmt.Println(reqParams)
-
-	// 设置共识脚本调用的函数
-	reqParams["MC_Call"] = "RegisterHacker"
-
-	submitParams, _ := json.Marshal(reqParams)
+	// 参数需要再次JSON格式化，因为传入cvm中的参数只能有一个，必须是个JSON字符串
+	paramsJSONString, _ := json.Marshal(reqParams["Params"])
 	submitBody := map[string]interface{}{
-		"Params":   string(submitParams),
+		"Params":   string(paramsJSONString),
 		"BcagName": "test",
 	}
+
+	// 构造向sdk发送请求的requester
 	bodyJSON, _ := json.Marshal(submitBody)
 	reader := bytes.NewReader(bodyJSON)
-
-	// 向SDK发送请求
 	request, err := http.NewRequest("POST", feService.config["sdkRpcServer"]+"/sdk/consensus/call_trans", reader)
 	if err != nil {
-		fmt.Fprintf(res, "200")
+		res.Write([]byte("400: " + err.Error()))
 		return
 	}
 	defer request.Body.Close()
@@ -73,10 +69,10 @@ func (feService *FeService) ApiHackerRegister(res http.ResponseWriter, req *http
 	client := http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
-		fmt.Fprintf(res, "200")
+		res.Write([]byte("400: " + err.Error()))
 		return
 	}
-	_, err = ioutil.ReadAll(resp.Body)
+	sdkRespBody, err := ioutil.ReadAll(resp.Body)
 
-	fmt.Fprintf(res, "200")
+	res.Write([]byte(sdkRespBody))
 }

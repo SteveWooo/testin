@@ -78,7 +78,7 @@ var Testin = {
 // 注册成为测试员
 // @params.
 exports.RegisterHacker = function(params) {
-    console.log(params)
+    console.log(params.name)
 }
 
 // 注册成为专家

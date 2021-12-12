@@ -1,7 +1,7 @@
 // 整体状态的数据结构
 var Status = {
     // 指定挖矿账号（后续应该由代表专家来做）
-    Miners : [],
+    Miners : ["047204499d849948aaffdec7ce2703f5b3"],
 
     Hackers : [],
     Experts : [],
@@ -9,8 +9,22 @@ var Status = {
     Tasks : [],
 }
 
-// 类与方法
 var Testin = {
+    // 全量读取区块，构造整体的世界状态。非常耗性能，上线时必须做缓存处理
+    BuildWorldStatus : function(){
+        var topBlock = JSON.parse(MC_GetTopBlock())
+        var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
+        for (var i=0;i<blocks.length;i++) {
+            var block = JSON.parse(blocks[i])
+            for (k=0;k<block.Transactions.length;k++) {
+                // 构建黑客身份状态
+                var trans = block.Transactions[k]
+                if (trans.Type == "RegisterHacker") {
+                    Status.Hackers.push(trans.Hacker)
+                }
+            }
+        }
+    },
     Class : {
         Transaction : {
             // 从params中构造一个交易对象
@@ -29,13 +43,17 @@ var Testin = {
             },
         },
 
+        /**
+         * @params.topBlock 上一个区块数据
+         * @params.transactions 本次交易的打包数据
+         */
         Block : {
             New : function(params){
                 function Block(_params) {
-
+                    var topBlock = _params.topBlock
                 }
 
-                return Block
+                return new Block(params)
             }
         },
 
@@ -55,6 +73,7 @@ var Testin = {
                     this.Signature = _params.Signature
                 }
 
+                // 检查提交签名
                 Hacker.prototype.CheckSign = function(){
                     // 校验Hash
                     var source = "Hacker" + this.From + this.Name + this.Qualification + this.Resume + this.Ts
@@ -68,6 +87,21 @@ var Testin = {
                     }
 
                     return true
+                }
+
+                // 排重，仅使用NodeID和Name来进行排重
+                Hacker.prototype.IsExist = function() {
+                    for(var i=0;i<Status.Hackers.length;i++) {
+                        if (this.Name == Status.Hackers[i].Name) {
+                            return true
+                        }
+
+                        if (this.From == Status.Hackers[i].From) {
+                            return true
+                        }
+                    }
+
+                    return false
                 }
 
                 return new Hacker(params)
@@ -89,17 +123,34 @@ var Testin = {
 exports.RegisterHacker = function(params) {
     var hacker = Testin.Class.Hacker.New(params)
     if (hacker.CheckSign() == false) {
-        console.log("签名校验失败: RegisterHacker")
+        console.log("提交数据签名校验失败: RegisterHacker")
         return 
     }
 
-    // 加上类型，就是
+    Testin.BuildWorldStatus()
+    if (hacker.IsExist()) {
+        console.log("该测试员名称已存在，或您已申请过测试员身份，无法重复申请")
+        return 
+    }
+
+    // 前端不会给交易加类型，这里的接口都是把提交参数封装成一个
+    // 个交易，所以需要在这里强制加上类型
     var transParam = {
         Type : "RegisterHacker",
         Hacker : hacker
     }
     var trans = Testin.Class.Transaction.New(transParam)
-    console.log(trans.CheckSign())
+    if (trans.CheckSign() == false) {
+        console.log("交易签名校验失败: RegisterHacker")
+        return 
+    }
+
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
 // 注册成为专家
@@ -148,6 +199,37 @@ exports.ConfirmTaskByEnterprise = function(params) {
 }
 
 // 新区块
+// @params.block 新区块的整体内容
 exports.DoPackage = function(params) {
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+    console.log(JSON.stringify(params))
 
+    // var block = {
+    //     Hash : "",
+    //     PreviousHash : "",
+    //     Number : thisBlockNumber + "",
+    //     Transactions : [],
+    //     MerkleRoot : "",
+    //     Miner : "",
+    //     Ts : (+new Date()).toString(),
+    //     Sign : "",
+    // }
+    // block.Transactions.push(trans)
+
+    // MC_AddNewBlock(JSON.stringify(block))
 }
+
+/*
+{
+    "Hash" : "HiThisIsTestinProject",
+    "PreviousHash" : "",
+    "Number" : "1",
+    "Transactions" : [],
+    "MerkleRoot" : "",
+    "Miner" : "",
+    "Ts" : "",
+    "Signature" : ""
+}
+*/

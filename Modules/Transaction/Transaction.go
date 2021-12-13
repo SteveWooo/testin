@@ -1,24 +1,34 @@
 package Transaction
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // 存储在区块中的交易对象
 type Transaction struct {
-	Type   string
-	Nonce  int
-	Hash   string
-	Hacker Hacker
+	Type       string
+	Nonce      int
+	Hash       string
+	Hacker     Hacker
+	Enterprise Enterprise
+	Expert     Expert
 }
 
-// 对刚构造好的交易数据进行初始化处理，包括赋予哈希
-func (t *Transaction) doInit() {
-	if t.Type == "RegisterHacker" {
-		t.Hash = t.Hacker.Hash
-	}
+func (t *Transaction) DoInit() {
+	// if t.Type == "RegisterHacker" {
+	// 	t.Hash = t.Hacker.Hash
+	// }
+	// if t.Type == "RegisterEnterprise" {
+	// 	t.Hash = t.Enterprise.Hash
+	// }
+	// if t.Type == "RegisterExpert" {
+	// 	t.Hash = t.Expert.Hash
+	// }
 }
 
 func (t *Transaction) LoadFromJSONString(jsonString string) error {
 	err := json.Unmarshal([]byte(jsonString), t)
+	t.DoInit()
 	if err != nil {
 		return err
 	}

@@ -46,7 +46,7 @@ func (m *Miner) Run() {
 				continue
 			}
 
-			// TODO检查交易，排除掉无效交易
+			// TODO检查交易，排除掉无效交易。但这个检查其实在cvm中就有，矿工不一定必须提交该检查
 
 			if len(trans) == 0 {
 				continue

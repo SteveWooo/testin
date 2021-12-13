@@ -6,6 +6,7 @@
         <v-row>
           <v-col xs cols="12">
             <v-text-field v-model="privateKey" label="请输入您的私钥"></v-text-field>
+            8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6
           </v-col>
           <v-col cols="6" xs>
           </v-col>
@@ -60,7 +61,6 @@ export default {
       // nodeID : 047204499d849948aaffdec7ce2703f5b3
       var nodeID = common.secp256k1.GetNodeIDFromPrivateKey(this.privateKey)
       this.nodeID = nodeID
-      console.log(nodeID)
       this.privateKey = ""
     },
     Logout : function(){

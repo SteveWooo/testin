@@ -1,8 +1,9 @@
 <script>
 import * as secp from "@noble/secp256k1"
-
-const baseUrl = "http://127.0.0.1:10001"
-// const baseUrl = "/"
+const BASE_URL = "http://127.0.0.1:10001"
+const IPFS_API_HOST = "127.0.0.1"
+const IPFS_API_PORT = 5001
+const IPFS_GATEWAY = "http://127.0.0.1:8081"
 
 var secp256k1 = {
     getPrivateKeyFromString : function(privateKey){
@@ -64,7 +65,10 @@ var ls = {
 }
 
 export default {
-    baseUrl,
+    BASE_URL,
+    IPFS_API_HOST,
+    IPFS_API_PORT,
+    IPFS_GATEWAY,
     ls,
     secp256k1,
 }

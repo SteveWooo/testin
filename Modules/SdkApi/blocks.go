@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type Response struct {
@@ -75,6 +76,10 @@ func doPost(url string, params map[string]interface{}) (*Response, error) {
 
 func GetTopBlock(config map[string]string) (*Response, error) {
 	return doGet(config["sdkRpcServer"] + "/sdk/consensus/get_info_by_name?bcag_name=" + config["bcagName"])
+}
+
+func GetBlock(config map[string]string, number int) (*Response, error) {
+	return doGet(config["sdkRpcServer"] + "/sdk/consensus/get_block_by_number?bcag_name=" + config["bcagName"] + "&block_number=" + strconv.Itoa(number))
 }
 
 func GetBlockByRange(config map[string]string, start string, end string) (*Response, error) {

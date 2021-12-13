@@ -6,21 +6,35 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	Modules "github.com/stevewooo/testin/Modules"
 )
 
 type FeService struct {
-	config map[string]string
+	config      map[string]string
+	WorldStatus *Modules.WorldStatus
 }
 
 func (feService *FeService) Build() {
 	feService.config = map[string]string{}
 	feService.config["httpPort"] = "10001"
+	feService.config["bcagName"] = "test"
 	feService.config["sdkRpcServer"] = "http://127.0.0.1:9024"
+
+	worldStatus := Modules.WorldStatus{}
+	worldStatus.Build(feService.config)
+	worldStatus.FetchAllBlocks()
+	worldStatus.DoBuildStatus()
+
+	feService.WorldStatus = &worldStatus
 }
 
 func (feService *FeService) Run() {
 	// 注册前端代理接口
 	http.HandleFunc("/api/proxy", feService.Proxy)
+
+	// 业务查询接口
+	http.HandleFunc("/api/world_status/get", feService.GetWorldStatus)
 
 	// 管理静态文件目录
 	fs := http.FileServer(http.Dir("static/"))
@@ -75,4 +89,23 @@ func (feService *FeService) Proxy(res http.ResponseWriter, req *http.Request) {
 	sdkRespBody, err := ioutil.ReadAll(resp.Body)
 
 	res.Write([]byte(sdkRespBody))
+}
+
+func (feService *FeService) GetWorldStatus(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+
+	if req.Method == "OPTIONS" {
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
+	// TODO 优化
+	feService.WorldStatus.FetchAllBlocks()
+	feService.WorldStatus.DoBuildStatus()
+
+	resp := HttpResponser{}
+	resp.Build()
+	resp.Data = feService.WorldStatus.GetWorldStatus()
+
+	res.Write([]byte(resp.PackToJSONString()))
 }

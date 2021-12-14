@@ -12,6 +12,7 @@ type Transaction struct {
 	Hacker     Hacker
 	Enterprise Enterprise
 	Expert     Expert
+	Task       Task
 }
 
 func (t *Transaction) DoInit() {

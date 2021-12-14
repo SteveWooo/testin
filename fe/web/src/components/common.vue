@@ -1,5 +1,6 @@
 <script>
 import * as secp from "@noble/secp256k1"
+import crypto from 'crypto-js'
 const BASE_URL = "http://127.0.0.1:10001"
 const IPFS_API_HOST = "127.0.0.1"
 const IPFS_API_PORT = 5001
@@ -64,6 +65,108 @@ var ls = {
     }
 }
 
+var api = {
+    GetWorldStatus : function(){
+      return new Promise((resolve, reject)=>{
+          window.axios({
+            method : "get",
+            url : BASE_URL + "/api/world_status/get",
+        }).then(res=>{
+            if (res.data.Status != 2000) {
+                alert("获取世界状态失败")
+            }
+            resolve(res.data)
+        }, rejectErr=>{
+          reject(rejectErr)
+        })
+      })
+    },
+
+    // 获取企业发布的任务列表
+    GetEnterprisePublishedTasks : function(page, itemPerPage){
+        return new Promise((resolve, reject)=>{
+          var now = +new Date()
+          var salt = "salt" + now
+          var saltHsah = crypto.SHA256(salt).toString()
+          
+          secp256k1.Sign(saltHsah).then(signature=>{
+            if(signature == undefined) {
+                reject("签名失败")
+                return 
+            }
+            window.axios({
+                method : "get",
+                url : BASE_URL + "/api/enterprise/get_my_task?page=" + page
+                + "&item_per_page=" + itemPerPage
+                + "&node_id=" + secp256k1.GetNodeID()
+                + "&salt=" + saltHsah
+                + "&signature=" + signature,
+            }).then(res=>{
+                if (res.data.Status != 2000) {
+                    alert("获取世界状态失败")
+                }
+                resolve(res.data)
+            }, rejectErr=>{
+            reject(rejectErr)
+            })
+          })
+      })
+    },
+
+    // 获取任务详情
+    GetTaskDetail : function(taskID){
+        return new Promise((resolve, reject)=>{
+          var now = +new Date()
+          var salt = "salt" + now
+          var saltHsah = crypto.SHA256(salt).toString()
+          
+          secp256k1.Sign(saltHsah).then(signature=>{
+            if(signature == undefined) {
+                reject("签名失败")
+                return 
+            }
+            window.axios({
+                method : "get",
+                url : BASE_URL + "/api/common/get_task_detail?task_id=" + taskID
+                + "&node_id=" + secp256k1.GetNodeID()
+                + "&salt=" + saltHsah
+                + "&signature=" + signature,
+            }).then(res=>{
+                if (res.data.Status != 2000) {
+                    alert(res.data.Status + ":" + res.data.Message)
+                }
+                resolve(res.data)
+            }, rejectErr=>{
+            reject(rejectErr)
+            })
+          })
+      })
+    },
+
+
+    CallTrans : function (params){
+        return new Promise((resolve, reject)=>{
+            window.axios({
+                method : "post",
+                url : BASE_URL + "/api/proxy",
+                headers : {
+                    "Content-Type" : "Application/json"
+                },
+                data : JSON.stringify({
+                    "Params" : params
+                })
+            }).then(res=>{
+                if (res.data.Status != 2000) {
+                    alert("调用提交失败：" + res.data.Message)
+                }
+                resolve(res.data)
+            }, rejectErr=>{
+                reject(rejectErr)
+            })
+        })
+    }
+}
+
 export default {
     BASE_URL,
     IPFS_API_HOST,
@@ -71,5 +174,6 @@ export default {
     IPFS_GATEWAY,
     ls,
     secp256k1,
+    api,
 }
 </script>

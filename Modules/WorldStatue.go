@@ -20,6 +20,7 @@ type WorldStatus struct {
 	Hackers     []*Transaction.Hacker
 	Enterprises []*Transaction.Enterprise
 	Experts     []*Transaction.Expert
+	Tasks       []*Transaction.Task
 }
 
 func (w *WorldStatus) Build(config map[string]string) {
@@ -32,6 +33,7 @@ func (w *WorldStatus) GetWorldStatus() map[string]interface{} {
 		"Hackers":     w.Hackers,
 		"Enterprises": w.Enterprises,
 		"Experts":     w.Experts,
+		"Tasks":       w.Tasks,
 	}
 }
 
@@ -39,6 +41,7 @@ func (w *WorldStatus) cleanStatus() {
 	w.Hackers = []*Transaction.Hacker{}
 	w.Enterprises = []*Transaction.Enterprise{}
 	w.Experts = []*Transaction.Expert{}
+	w.Tasks = []*Transaction.Task{}
 }
 
 // 读取交易数据，写入世界状态。
@@ -53,6 +56,10 @@ func (w *WorldStatus) parseTransaction(trans *Transaction.Transaction) {
 
 	if trans.Type == "RegisterExpert" {
 		w.Experts = append(w.Experts, &trans.Expert)
+	}
+
+	if trans.Type == "PublishTaskByEnterprise" {
+		w.Tasks = append(w.Tasks, &trans.Task)
 	}
 }
 

@@ -63,6 +63,8 @@ func (m *Miner) Run() {
 			block.Transactions = trans
 			block.Sign(m.config["privateKey"])
 
+			fmt.Println(trans[0])
+
 			callDoPackResp, err := SdkApi.CallTrans(m.config, map[string]interface{}{
 				"MC_Call": "DoPackage",
 				"Block":   block,

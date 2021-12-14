@@ -44,6 +44,11 @@ const routes = [
     path: '/personal-center',
     name : 'personal-center',
     component : ()=>import ('../views/PersonalCenter.vue')
+  },
+  {
+    path: '/task/:task_id',
+    name : 'task',
+    component : ()=>import ('../views/Task.vue')
   }
 ]
 

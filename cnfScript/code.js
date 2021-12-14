@@ -22,6 +22,9 @@ var Testin = {
             if (trans.Type == "RegisterExpert") {
                 Status.Experts.push(trans.Expert)
             }
+            if (trans.Type == "PublishTaskByEnterprise") {
+                Status.Tasks.push(trans.Task)
+            }
         }
 
         var topBlock = JSON.parse(MC_GetTopBlock())
@@ -90,6 +93,18 @@ var Testin = {
                         }
                         this.CheckWorldStatus = function(){
                             return this.Expert.CheckWorldStatus()
+                        }
+                        return this
+                    }
+
+                    if (this.Type == "PublishTaskByEnterprise") {
+                        this.Task = Testin.Class.Task.New(_params.Task)
+                        this.Hash = this.Task.Hash
+                        this.CheckSign = function(){
+                            return this.Task.CheckSign()
+                        }
+                        this.CheckWorldStatus = function(){
+                            return this.Task.CheckWorldStatus()
                         }
                         return this
                     }
@@ -306,8 +321,71 @@ var Testin = {
                 return new Enterprise(params)
             }
         },
+        /**
+         * 测试任务对象
+         */
         Task : {
+            New : function(params) {
+                function Task(_params) {
+                    // 初始化参数
+                    this.Budget = _params.Budget
+                    this.From = _params.From
+                    this.MaxAuthorizationCount = _params.MaxAuthorizationCount
+                    this.Name = _params.Name
+                    this.Require = _params.Require
+                    this.Resume = _params.Resume
+                    this.Ts = _params.Ts
 
+                    // 运作参数（不参与签名
+                    this.Hackers = []
+                    this.IsPublic = false // 默认任务为不公开任务
+
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+                }
+
+                // 检查提交签名
+                Task.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "Task" + this.Budget + this.From + this.MaxAuthorizationCount + this.Name + this.Require + this.Resume + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                // 检查创建人是否已经有认证的企业
+                Task.prototype.CheckWorldStatus = function(){
+                    var isEnterperiseAccount = false
+                    for (var i=0;i<Status.Enterprises.length;i++) {
+                        if (this.From == Status.Enterprises[i].From) {
+                            isEnterperiseAccount = true
+                        }
+                    }
+                    if (isEnterperiseAccount == false) {
+                        return false
+                    }
+
+                    return true
+                }
+
+                return new Task(params)
+            }
+        },
+        /**
+         * 任务里面的测试员列表
+         * @param params.Hacker 测试员对象
+         */
+        TaskHacker : {
+            New : function(params){
+
+            }
         }
     }
 }
@@ -403,7 +481,30 @@ exports.RegisterExpert = function(params) {
 
 // 企业发布任务
 exports.PublishTaskByEnterprise = function(params) {
+    var task = Testin.Class.Task.New(params)
+    if (task.CheckSign() == false ) {
+        console.log("提交数据签名校验失败：PublishTaskByEnterprise");
+        return 
+    }
 
+    Testin.BuildWorldStatus()
+    var transParam = {
+        Type : "PublishTaskByEnterprise",
+        Task : task
+    }
+    var trans = Testin.Class.Transaction.New(transParam)
+    // 检查世界状态
+    if (trans.CheckWorldStatus() == false) {
+        console.log("交易世界状态检查失败：" + trans.Type)
+        return 
+    }
+    
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
 // 专家审核任务
@@ -445,7 +546,6 @@ exports.DoPackage = function(params) {
     // 构建一个区块对象
     // console.log(JSON.stringify(params))
     var block = Testin.Class.Block.New(params.Block)
-    // console.log(JSON.stringify(block))
 
     // TODO 共识逻辑
     if (block.Miner != Status.Miners[0]) {
@@ -469,6 +569,7 @@ exports.DoPackage = function(params) {
     }
 
     // 业务校验
+    Testin.BuildWorldStatus()
     for (var i=0;i<block.Transactions.length;i++) {
         if (block.Transactions[i].CheckWorldStatus() == false) {
             console.log("交易世界状态检查失败")

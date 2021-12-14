@@ -229,7 +229,10 @@ export default {
     },
 
     Refresh : async function(){
-      var worldStatusRes = await this.GetWorldStatus()
+      var worldStatusRes = await common.api.GetWorldStatus()
+      if (worldStatusRes.Status != 2000) {
+        return 
+      }
       var worldStatus = worldStatusRes.Data
 
       // 个人信息初始化
@@ -255,20 +258,19 @@ export default {
     },
 
     // TODO 常用函数封装起来
-    GetWorldStatus : function(){
-      var that = this;
-      return new Promise((resolve, reject)=>{
-          that.axios({
-            method : "get",
-            url : common.BASE_URL + "/api/world_status/get",
-        }).then(res=>{
-            resolve(res.data)
-        }, rejectErr=>{
-          reject(rejectErr)
-        })
-      })
-      
-    },
+    // GetWorldStatus : function(){
+    //   var that = this;
+    //   return new Promise((resolve, reject)=>{
+    //       that.axios({
+    //         method : "get",
+    //         url : common.BASE_URL + "/api/world_status/get",
+    //     }).then(res=>{
+    //         resolve(res.data)
+    //     }, rejectErr=>{
+    //       reject(rejectErr)
+    //     })
+    //   })
+    // },
 
     UploadEnterpriseLogo : function(){
       var that = this;

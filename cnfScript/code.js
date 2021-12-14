@@ -337,7 +337,7 @@ var Testin = {
                     this.Ts = _params.Ts
 
                     // 运作参数（不参与签名
-                    this.Hackers = []
+                    this.TaskHackers = []
                     this.IsPublic = false // 默认任务为不公开任务
 
                     this.Hash = _params.Hash

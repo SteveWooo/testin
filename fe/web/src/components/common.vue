@@ -103,7 +103,38 @@ var api = {
                 + "&signature=" + signature,
             }).then(res=>{
                 if (res.data.Status != 2000) {
-                    alert("获取世界状态失败")
+                    alert("获取任务列表失败：" + res.data.Message)
+                }
+                resolve(res.data)
+            }, rejectErr=>{
+            reject(rejectErr)
+            })
+          })
+      })
+    },
+
+    // 获取任务列表
+    GetTask : function(page, itemPerPage){
+        return new Promise((resolve, reject)=>{
+          var now = +new Date()
+          var salt = "salt" + now
+          var saltHsah = crypto.SHA256(salt).toString()
+          
+          secp256k1.Sign(saltHsah).then(signature=>{
+            if(signature == undefined) {
+                reject("签名失败")
+                return 
+            }
+            window.axios({
+                method : "get",
+                url : BASE_URL + "/api/common/get_task?page=" + page
+                + "&item_per_page=" + itemPerPage
+                + "&node_id=" + secp256k1.GetNodeID()
+                + "&salt=" + saltHsah
+                + "&signature=" + signature,
+            }).then(res=>{
+                if (res.data.Status != 2000) {
+                    alert("获取任务列表失败：" + res.data.Message)
                 }
                 resolve(res.data)
             }, rejectErr=>{

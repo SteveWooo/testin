@@ -41,6 +41,7 @@ func (feService *FeService) Run() {
 	http.HandleFunc("/api/world_status/get", feService.GetWorldStatus)
 	http.HandleFunc("/api/enterprise/get_my_task", feService.GetEnterprisePublishedTask)
 	http.HandleFunc("/api/common/get_task_detail", feService.GetTaskDetail)
+	http.HandleFunc("/api/common/get_task", feService.GetTask)
 
 	// 管理静态文件目录
 	fs := http.FileServer(http.Dir("static/"))
@@ -203,6 +204,87 @@ func (feService *FeService) GetEnterprisePublishedTask(res http.ResponseWriter, 
 		if statusTask[i].From == nodeID {
 			tasks = append(tasks, statusTask[i])
 		}
+	}
+
+	startIndex := (page - 1) * itemPerPage
+	endIndex := startIndex + itemPerPage
+	if endIndex > len(tasks) {
+		endIndex = len(tasks)
+	}
+	if startIndex > endIndex {
+		resp.Status = 4004
+		resp.Message = "超页错误"
+		res.Write([]byte(resp.PackToJSONString()))
+		return
+	}
+
+	resp.Data = map[string]interface{}{
+		"Count": len(tasks),
+		"Tasks": tasks[startIndex:endIndex],
+	}
+
+	res.Write([]byte(resp.PackToJSONString()))
+}
+
+func (feService *FeService) GetTask(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+
+	if req.Method == "OPTIONS" {
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
+	resp := HttpResponser{}
+	resp.Build()
+
+	// 校验签名权限
+	queryParams := req.URL.Query()
+	if checkGetSign(queryParams) == false {
+		resp.Status = 4003
+		resp.Message = "参数错误或检查签名失败，接口无权访问"
+		res.Write([]byte(resp.PackToJSONString()))
+		return
+	}
+
+	if len(queryParams["page"]) == 0 {
+		resp.Status = 4003
+		resp.Message = "参数错误: page"
+		res.Write([]byte(resp.PackToJSONString()))
+		return
+	}
+	page, err := strconv.Atoi(queryParams["page"][0])
+	if err != nil {
+		resp.Status = 4003
+		resp.Message = "参数错误:" + err.Error()
+		res.Write([]byte(resp.PackToJSONString()))
+		return
+	}
+
+	if len(queryParams["item_per_page"]) == 0 {
+		resp.Status = 4003
+		resp.Message = "参数错误: page"
+		res.Write([]byte(resp.PackToJSONString()))
+		return
+	}
+	itemPerPage, err := strconv.Atoi(queryParams["item_per_page"][0])
+	if err != nil {
+		resp.Status = 4003
+		resp.Message = "参数错误:" + err.Error()
+		res.Write([]byte(resp.PackToJSONString()))
+		return
+	}
+
+	// TODO 优化
+	feService.WorldStatus.FetchAllBlocks()
+	feService.WorldStatus.DoBuildStatus()
+
+	// 筛选需要的内容
+	status := feService.WorldStatus.GetWorldStatus()
+	statusTask := status["Tasks"].([]*Transaction.Task)
+
+	tasks := []*Transaction.Task{}
+	for i := len(statusTask) - 1; i >= 0; i-- {
+		tasks = append(tasks, statusTask[i])
 	}
 
 	startIndex := (page - 1) * itemPerPage

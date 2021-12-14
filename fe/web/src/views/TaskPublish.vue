@@ -8,59 +8,30 @@
           </v-btn>
         </v-col>
         <v-col cols="4">
-          <h1>我发布的任务</h1>
+          <h1>已发布的任务</h1>
         </v-col>
       </v-row>
     </div>
 
-    <div style="margin-top:20px;border:0px solid #eee">
-      <v-list>
-        <template v-for="item in myTasks">
-          <v-list-item :key="item.Hash">
-            <v-list-item-content>
-              <v-card style="padding:10px 8px 8px 8px;">
-                <v-row dense>
-                  <v-col cols="10" style="text-align:left">
-                    <h1>
-                      {{item.Name}}
-                    </h1>
-                  </v-col>
-                  <v-col cols="2">
-                    <v-btn color="primary" @click="OpenTask(item)">打开任务</v-btn>
-                  </v-col>
-
-                  <v-col cols="12" style="text-align:left;font-size:12px;color:#999">
-                    <div>
-                     业务需求：{{item.Require}} | 发布日期：{{(new Date(parseInt(item.Ts)).getFullYear()) + '/' + (new Date(parseInt(item.Ts)).getMonth()) + '/' + (new Date(parseInt(item.Ts)).getDay()) }}
-                    </div>
-                  </v-col>
-                  <v-col cols="12" style="text-align:left;color:#777;font-size:14px">
-                      项目介绍：{{item.Resume}}
-                  </v-col>
-
-                  <v-col cols="12" style="text-align:left;color:#777;font-size:14px">
-                      发布者：{{item.From}}
-                  </v-col>
-                </v-row>
-              </v-card>
-            </v-list-item-content>
-          </v-list-item>
-        </template>
-      </v-list>
+    <div style="margin-top:30px;color:#777;font-size:20px" v-if="myTasks.length == 0">
+      暂无任务 ...<v-icon>mdi-bird</v-icon>
     </div>
 
-    <v-row justify="center">
-      <v-col cols="8">
-        <v-container class="max-width">
-          <v-pagination
-            v-model="pageNumber"
-            @input="Refresh()"
-            class="my-4"
-            :length="Math.ceil(taskCount / itemPerPage)"
-          ></v-pagination>
-        </v-container>
-      </v-col>
-    </v-row>
+    <div style="margin-top:20px;border:0px solid #eee" v-if="myTasks.length != 0">
+      <taskList :tasks="myTasks"></taskList>
+      <v-row justify="center">
+        <v-col cols="8">
+          <v-container class="max-width">
+            <v-pagination
+              v-model="pageNumber"
+              @input="Refresh()"
+              class="my-4"
+              :length="Math.ceil(taskCount / itemPerPage)"
+            ></v-pagination>
+          </v-container>
+        </v-col>
+      </v-row>
+    </div>
 
     <v-dialog
       v-model="publishDialog"
@@ -110,8 +81,12 @@
 
 <script>
 import common from '../components/common.vue'
+import taskList from '../components/taskList.vue'
 import crypto from 'crypto-js'
 export default {
+  components : {
+    taskList,
+  },
   data : ()=>({
     publishDialog : false,
 

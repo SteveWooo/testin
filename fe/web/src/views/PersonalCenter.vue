@@ -1,6 +1,8 @@
 <template>
-  <div>
-    <h1>个人中心</h1>
+  <v-app style="width:90%;margin-left:5%">
+    <div style="margin-top:20px">
+        <h1>个人中心</h1>
+    </div>
     <div v-if='nodeID==""'>
       <v-container>
         <v-row>
@@ -30,7 +32,7 @@
       </v-row>
     </div>
 
-  </div>
+  </v-app>
 </template>
 
 <script>

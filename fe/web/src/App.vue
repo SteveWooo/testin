@@ -53,7 +53,6 @@
     </v-main>
 
     <v-footer
-      app
       padless
     >
       <v-card

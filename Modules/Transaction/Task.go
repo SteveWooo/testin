@@ -13,6 +13,7 @@ type Task struct {
 	Hash      string
 	Signature string
 
+	IsPublic    string
 	TaskHackers []*TaskHacker // 测试实例列表（测试员列表）
 }
 

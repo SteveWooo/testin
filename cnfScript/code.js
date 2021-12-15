@@ -7,11 +7,12 @@ var Status = {
     Experts : [],
     Enterprises : [],
     Tasks : [],
+    TaskHackers : [],
 }
 
 var Testin = {
     // 全量读取区块，构造整体的世界状态。非常耗性能，上线时必须做缓存处理
-    BuildWorldStatus : function(){
+    BuildWorldStatus : function(param){
         function loadTrans(trans){
             if (trans.Type == "RegisterHacker") {
                 Status.Hackers.push(trans.Hacker)
@@ -24,6 +25,17 @@ var Testin = {
             }
             if (trans.Type == "PublishTaskByEnterprise") {
                 Status.Tasks.push(trans.Task)
+            }
+            if (trans.Type == "ApplyTaskByHacker") {
+                Status.TaskHackers.push(trans.TaskHacker)
+            }
+            if (trans.Type == "AuthorizationHackerToTaskByEnterprise") {
+                for (var i=0;i<Status.TaskHackers.length;i++) {
+                    if (Status.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID && Status.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID) {
+                        Status.TaskHackers[i].IsPermission = "true"
+                        Status.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
+                    }
+                }
             }
         }
 
@@ -41,15 +53,93 @@ var Testin = {
         // 缓存中的合法交易也要加入其中，防止交易重复提交
         // 这里不需要考虑缓存交易中存在 注册企业+发布任务 这种交易组合
         // 因为发布任务的交易，不能在注册企业被上链之前认可
-        transCache = MC_GetCacheByPrefix("transCache-" + (parseInt(topBlock.Number) + 1) + "-")
-        transCache = JSON.parse(transCache)
-        for (var i=0;i<transCache.length;i++) {
-            var trans = JSON.parse(transCache[i])
-            loadTrans(trans)
+        if (param != undefined && param.LoadCache == true) {
+            transCache = MC_GetCacheByPrefix("transCache-" + (parseInt(topBlock.Number) + 1) + "-")
+            transCache = JSON.parse(transCache)
+            for (var i=0;i<transCache.length;i++) {
+                var trans = JSON.parse(transCache[i])
+                loadTrans(trans)
+            }
         }
-
         // console.log(JSON.stringify(Status))
     },
+
+    // 操作类，比如授权测试任务
+    Operation : {
+        AuthorizationHackerToTaskByEnterprise : {
+            New : function(params) {
+                function Auth(_params) {
+                    // 初始化参数
+                    this.From = _params.From
+                    this.HackerID = _params.HackerID
+                    this.PermissionInformation = _params.PermissionInformation
+                    this.TaskID = _params.TaskID
+                    this.Ts = _params.Ts
+
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+                }
+
+                // 检查提交签名
+                Auth.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "AuthorizationHackerToTaskByEnterprise" + this.From + this.HackerID + this.PermissionInformation + this.TaskID + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                // 检查任务 & 测试员ID的组合是否存在
+                // 检查企业是否创建人
+                // 检查是否已经授权
+                Auth.prototype.CheckWorldStatus = function(){
+                    var isItemExist = false
+                    var isEnterpriseSelf = false // 检查这个任务发起者是否本人，不是的话不能授权
+                    var isAlreadyAuth = false
+                    for (var i=0;i<Status.TaskHackers.length;i++) {
+                        if (Status.TaskHackers[i].TaskID == this.TaskID && Status.TaskHackers[i].From == this.HackerID) {
+                            isItemExist = true
+                            if (Status.TaskHackers[i].IsPermission == "true") {
+                                isAlreadyAuth = true
+                            }
+                            for (var k=0;k<Status.Tasks.length;k++) {
+                                if (Status.Tasks[k].Hash == this.TaskID && Status.Tasks[k].From == this.From) {
+                                    isEnterpriseSelf = true 
+                                    break
+                                }
+                            }
+                            break
+                        }
+                    }
+                    if (isAlreadyAuth == true) {
+                        console.log("无法重复授权")
+                        return false
+                    }
+                    if (isItemExist == false) {
+                        console.log("测试员申请不存在")
+                        return false
+                    }
+                    if (isEnterpriseSelf == false) {
+                        console.log("该任务不是授权人发起的")
+                        return false
+                    }
+
+                    return true
+                }
+
+                return new Auth(params)
+            }
+        }
+    },
+
+    // 对象类
     Class : {
         Transaction : {
             // 从params中构造一个交易对象
@@ -107,6 +197,28 @@ var Testin = {
                             return this.Task.CheckWorldStatus()
                         }
                         return this
+                    }
+
+                    if (this.Type == "ApplyTaskByHacker") {
+                        this.TaskHacker = Testin.Class.TaskHacker.New(_params.TaskHacker)
+                        this.Hash = this.TaskHacker.Hash
+                        this.CheckSign = function(){
+                            return this.TaskHacker.CheckSign()
+                        }
+                        this.CheckWorldStatus = function(){
+                            return this.TaskHacker.CheckWorldStatus()
+                        }
+                    }
+
+                    if (this.Type == "AuthorizationHackerToTaskByEnterprise") {
+                        this.AuthorizationHackerToTaskByEnterprise = Testin.Operation.AuthorizationHackerToTaskByEnterprise.New(_params.AuthorizationHackerToTaskByEnterprise)
+                        this.Hash = this.AuthorizationHackerToTaskByEnterprise.Hash
+                        this.CheckSign = function(){
+                            return this.AuthorizationHackerToTaskByEnterprise.CheckSign()
+                        }
+                        this.CheckWorldStatus = function(){
+                            return this.AuthorizationHackerToTaskByEnterprise.CheckWorldStatus()
+                        }
                     }
                 }
 
@@ -210,10 +322,12 @@ var Testin = {
                 Hacker.prototype.CheckWorldStatus = function(){
                     for(var i=0;i<Status.Hackers.length;i++) {
                         if (this.Name == Status.Hackers[i].Name) {
+                            console.log("测试员重名错误")
                             return false
                         }
 
                         if (this.From == Status.Hackers[i].From) {
+                            console.log("一个账号不可重复申请测试员")
                             return false
                         }
                     }
@@ -366,6 +480,7 @@ var Testin = {
                     for (var i=0;i<Status.Enterprises.length;i++) {
                         if (this.From == Status.Enterprises[i].From) {
                             isEnterperiseAccount = true
+                            break 
                         }
                     }
                     if (isEnterperiseAccount == false) {
@@ -384,7 +499,103 @@ var Testin = {
          */
         TaskHacker : {
             New : function(params){
+                function TaskHacker(_params) {
+                    // 初始化参数
+                    this.From = _params.From // 与HackerID绑定
+                    this.TaskID = _params.TaskID
+                    this.Ts = _params.Ts
 
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+
+                    this.IsPermission = "false"
+                    this.PermissionInformation = ""
+                    this.ExpertList = []
+                    this.ReportPATH = []
+                    this.TaskExpertReports = []
+                    this.thisNegotiations = []
+                }
+
+                // 检查提交签名
+                TaskHacker.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "TaskHacker" + this.From + this.TaskID + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                // 检查任务是否存在，
+                // 检查是否已经提交过参与信息，
+                // 检查已经通过的人数是否达到上限
+                TaskHacker.prototype.CheckWorldStatus = function(){
+                    var isTaskExist = false
+                    var neverJoin = true
+                    var isEnoughPermissionHacker = false
+                    var isHacker = false
+
+                    for (var i=0;i<Status.Hackers.length;i++) {
+                        if (this.From == Status.Hackers[i].From) {
+                            isHacker = true
+                        }
+                    }
+                    if (isHacker == false) {
+                        console.log("申请人未有测试员资格")
+                        return false
+                    }
+                    for (var i=0;i<Status.Tasks.length;i++) {
+                        if (this.TaskID == Status.Tasks[i].Hash) {
+                            isTaskExist = true
+
+                            // 检查已经被授权的人数是否达到上限
+                            var permissionCount = 0
+                            for(var k=0;k<Status.TaskHackers.length;k++) {
+                                if (Status.TaskHackers[k].TaskID != this.TaskID) {
+                                    continue 
+                                }
+
+                                if (Status.TaskHackers[k].IsPermission == "true") {
+                                    permissionCount = permissionCount + 1
+                                }
+
+                                if (Status.TaskHackers[k].From == this.From) {
+                                    neverJoin = false
+                                }
+                            }
+                            if(permissionCount >= Status.Tasks[i].MaxAuthorizationCount) {
+                                isEnoughPermissionHacker = true
+                            }
+
+                            break 
+                        }
+                    }
+                    // 任务必须存在
+                    if (isTaskExist == false) {
+                        console.log("任务不存在")
+                        return false
+                    }
+                    // 不可重复报名参与
+                    if (neverJoin == false) {
+                        console.log("申请人不可重复申请")
+                        return false
+                    }
+                    // 不可超过限定人数
+                    if (isEnoughPermissionHacker == true) {
+                        console.log("任务人数达到上限")
+                        return false
+                    }
+
+                    return true
+                }
+
+                return new TaskHacker(params)
             }
         }
     }
@@ -397,7 +608,9 @@ exports.RegisterHacker = function(params) {
         console.log("提交数据签名校验失败: RegisterHacker")
         return 
     }
-    Testin.BuildWorldStatus()
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
 
     // 前端不会给交易加类型，这里的接口都是把提交参数封装成一个
     // 个交易，所以需要在这里强制加上类型
@@ -429,7 +642,9 @@ exports.RegisterEnterprise = function(params) {
         return 
     }
 
-    Testin.BuildWorldStatus()
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
     var transParam = {
         Type : "RegisterEnterprise",
         Enterprise : enterprise
@@ -458,7 +673,9 @@ exports.RegisterExpert = function(params) {
         return 
     }
 
-    Testin.BuildWorldStatus()
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
     var transParam = {
         Type : "RegisterExpert",
         Expert : expert
@@ -487,7 +704,9 @@ exports.PublishTaskByEnterprise = function(params) {
         return 
     }
 
-    Testin.BuildWorldStatus()
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
     var transParam = {
         Type : "PublishTaskByEnterprise",
         Task : task
@@ -514,12 +733,62 @@ exports.ReviewTaskByExpert = function(params) {
 
 // 测试员申请任务
 exports.ApplyTaskByHacker = function(params){
+    var taskHacker = Testin.Class.TaskHacker.New(params)
+    if (taskHacker.CheckSign() == false ) {
+        console.log("提交数据签名校验失败：PublishTaskByEnterprise");
+        return 
+    }
 
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
+    var transParam = {
+        Type : "ApplyTaskByHacker",
+        TaskHacker : taskHacker
+    }
+    var trans = Testin.Class.Transaction.New(transParam)
+    // 检查世界状态
+    if (trans.CheckWorldStatus() == false) {
+        console.log("交易世界状态检查失败：" + trans.Type)
+        return 
+    }
+
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
 // 企业授权测试员
 exports.AuthorizationHackerToTaskByEnterprise = function(params){
+    var auth = Testin.Operation.AuthorizationHackerToTaskByEnterprise.New(params)
+    if (auth.CheckSign() == false) {
+        console.log("提交数据签名校验失败：AuthorizationHackerToTaskByEnterprise");
+        return 
+    }
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
 
+    var transParam = {
+        Type : "AuthorizationHackerToTaskByEnterprise",
+        AuthorizationHackerToTaskByEnterprise : auth
+    }
+    var trans = Testin.Class.Transaction.New(transParam)
+    // 检查世界状态
+    if (trans.CheckWorldStatus() == false) {
+        console.log("交易世界状态检查失败：" + trans.Type)
+        return 
+    }
+
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
 // 测试员提交报告
@@ -569,10 +838,13 @@ exports.DoPackage = function(params) {
     }
 
     // 业务校验
-    Testin.BuildWorldStatus()
+    Testin.BuildWorldStatus({
+        LoadCache : false
+    })
     for (var i=0;i<block.Transactions.length;i++) {
         if (block.Transactions[i].CheckWorldStatus() == false) {
-            console.log("交易世界状态检查失败")
+            MC_DeleteCacheByPrefix("transCache-" + block.Number + "-" + block.Transactions[i].Hash)
+            console.log("交易世界状态检查失败:" + JSON.stringify(block.Transactions[i]))
             return 
         }
     }

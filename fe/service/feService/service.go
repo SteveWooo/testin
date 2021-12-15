@@ -380,24 +380,42 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 		isCreater = true
 	}
 
-	if task.TaskHackers != nil {
-		for i := 0; i < len(task.TaskHackers); i++ {
-			if task.TaskHackers[i].HackerID == queryParams["node_id"][0] {
+	// 找出该任务下的所有参与者
+	taskHackers := []*Transaction.TaskHacker{}
+	for i := 0; i < len(feService.WorldStatus.TaskHackers); i++ {
+		if feService.WorldStatus.TaskHackers[i].TaskID == task.Hash {
+			// 再从Hacker表中获取测试员基本信息
+			for k := 0; k < len(feService.WorldStatus.Hackers); k++ {
+				if feService.WorldStatus.Hackers[k].From == feService.WorldStatus.TaskHackers[i].From {
+					feService.WorldStatus.TaskHackers[i].Hacker = feService.WorldStatus.Hackers[k]
+				}
+			}
+
+			taskHackers = append(taskHackers, feService.WorldStatus.TaskHackers[i])
+		}
+	}
+
+	// 构造给前端使用。
+	task.TaskHackers = taskHackers
+
+	if taskHackers != nil {
+		for i := 0; i < len(taskHackers); i++ {
+			if taskHackers[i].From == queryParams["node_id"][0] {
 				isJoinHacker = true
-				if task.TaskHackers[i].IsPermission == "true" {
+				if taskHackers[i].IsPermission == "true" {
 					isPremissionHacker = true
 				}
 				break
 			}
 		}
 
-		for i := 0; i < len(task.TaskHackers); i++ {
-			if task.TaskHackers[i].IsPermission == "false" {
+		for i := 0; i < len(taskHackers); i++ {
+			if taskHackers[i].IsPermission == "false" {
 				continue
 			}
 
-			for k := 0; k < len(task.TaskHackers[i].ExpertList); k++ {
-				if task.TaskHackers[i].ExpertList[k] == queryParams["node_id"][0] {
+			for k := 0; k < len(taskHackers[i].ExpertList); k++ {
+				if taskHackers[i].ExpertList[k] == queryParams["node_id"][0] {
 					isTaskExpert = true
 					break
 				}

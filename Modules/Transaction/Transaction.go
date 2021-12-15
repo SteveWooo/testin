@@ -6,13 +6,19 @@ import (
 
 // 存储在区块中的交易对象
 type Transaction struct {
-	Type       string
-	Nonce      int
-	Hash       string
+	Type  string
+	Nonce int
+	Hash  string
+	// 对象表
 	Hacker     Hacker
 	Enterprise Enterprise
 	Expert     Expert
 	Task       Task
+	// 关联对象表
+	TaskHacker TaskHacker
+
+	// 操作类型对象表
+	AuthorizationHackerToTaskByEnterprise AuthorizationHackerToTaskByEnterprise
 }
 
 func (t *Transaction) DoInit() {

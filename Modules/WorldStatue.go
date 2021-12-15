@@ -21,6 +21,11 @@ type WorldStatus struct {
 	Enterprises []*Transaction.Enterprise
 	Experts     []*Transaction.Expert
 	Tasks       []*Transaction.Task
+
+	// 关联状态
+	TaskHackers []*Transaction.TaskHacker
+
+	// 操作对象暂不做存储
 }
 
 func (w *WorldStatus) Build(config map[string]string) {
@@ -42,6 +47,7 @@ func (w *WorldStatus) cleanStatus() {
 	w.Enterprises = []*Transaction.Enterprise{}
 	w.Experts = []*Transaction.Expert{}
 	w.Tasks = []*Transaction.Task{}
+	w.TaskHackers = []*Transaction.TaskHacker{}
 }
 
 // 读取交易数据，写入世界状态。
@@ -60,6 +66,21 @@ func (w *WorldStatus) parseTransaction(trans *Transaction.Transaction) {
 
 	if trans.Type == "PublishTaskByEnterprise" {
 		w.Tasks = append(w.Tasks, &trans.Task)
+	}
+
+	if trans.Type == "ApplyTaskByHacker" {
+		w.TaskHackers = append(w.TaskHackers, &trans.TaskHacker)
+	}
+
+	// operation类型的交易
+	if trans.Type == "AuthorizationHackerToTaskByEnterprise" {
+		for i := 0; i < len(w.TaskHackers); i++ {
+			if w.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID &&
+				w.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID {
+				w.TaskHackers[i].IsPermission = "true"
+				w.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
+			}
+		}
 	}
 }
 

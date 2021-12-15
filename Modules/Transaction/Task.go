@@ -19,9 +19,9 @@ type Task struct {
 
 // 测试员子对象
 type TaskHacker struct {
-	HackerID string // 关联到隔壁Hacker表
-	TaskID   string // 任务的Hash值
-	Ts       string // 最后一次上传报告的日期
+	From   string // 关联到隔壁Hacker表
+	TaskID string // 任务的Hash值
+	Ts     string // 最后一次上传报告的日期
 
 	Hash      string
 	Signature string
@@ -32,11 +32,13 @@ type TaskHacker struct {
 	ReportPATH            string              // 上传报告的IPFS地址，默认空
 	TaskExpertReports     []*TaskExpertReport // 专家报告
 	Negotiations          []*TaskNegotiation  // 协商过程
+
+	Hacker *Hacker // 关联信息
 }
 
 // 专家报告子子对象
 type TaskExpertReport struct {
-	ExpertID string
+	From     string // 关联到专家表
 	TaskID   string
 	HackerID string
 	Ts       string
@@ -50,4 +52,16 @@ type TaskExpertReport struct {
 
 // 协商消息子子对象
 type TaskNegotiation struct {
+}
+
+// 操作类型交易对象
+type AuthorizationHackerToTaskByEnterprise struct {
+	From                  string // 企业id
+	HackerID              string // 测试员ID
+	PermissionInformation string // 授权信息
+	TaskID                string // 任务id
+	Ts                    string
+
+	Hash      string
+	Signature string
 }

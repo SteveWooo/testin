@@ -395,9 +395,8 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 		}
 	}
 
-	// 构造给前端使用。
+	// 评定调取接口的人的权限：
 	task.TaskHackers = taskHackers
-
 	if taskHackers != nil {
 		for i := 0; i < len(taskHackers); i++ {
 			if taskHackers[i].From == queryParams["node_id"][0] {
@@ -423,6 +422,45 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 		}
 	}
 
+	// 如果是参与的测试员，那么就要把这位参与者的taskHacker信息单独抽出来
+	var myTaskHackerInfo *Transaction.TaskHacker = nil
+	if isPremissionHacker == true {
+		for i := 0; i < len(taskHackers); i++ {
+			if taskHackers[i].From == queryParams["node_id"][0] {
+				myTaskHackerInfo = taskHackers[i]
+			}
+		}
+	}
+
+	// 提取出等待专家审核的报告
+	expertNeedToReview := []*Transaction.TaskHacker{}
+	if isTaskExpert == true {
+		// 遍历所有接任务的对象
+		for i := 0; i < len(taskHackers); i++ {
+			if taskHackers[i].ReportPath == "" {
+				continue
+			}
+			// 判断是否专家
+			for k := 0; k < len(taskHackers[i].ExpertList); k++ {
+				if queryParams["node_id"][0] == taskHackers[i].ExpertList[k] {
+					// 是这个任务的指定专家了，判断是否已经评审完成
+					alreadyReview := false
+					for j := 0; j < len(taskHackers[i].ExpertReviewReports); j++ {
+						if queryParams["node_id"][0] == taskHackers[i].ExpertReviewReports[j].From {
+							alreadyReview = true
+						}
+					}
+
+					if alreadyReview == false {
+						expertNeedToReview = append(expertNeedToReview, taskHackers[i])
+					}
+
+					break
+				}
+			}
+		}
+	}
+
 	resp.Data = map[string]interface{}{
 		"Task": task,
 		"Permission": map[string]interface{}{
@@ -432,6 +470,8 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 			"IsTaskExpert":       isTaskExpert,
 		},
 		"TaskCreaterEnterprise": taskCreaterEnterprise,
+		"MyTaskHackerInfo":      myTaskHackerInfo,
+		"ExpertNeedToReview":    expertNeedToReview,
 	}
 
 	res.Write([]byte(resp.PackToJSONString()))

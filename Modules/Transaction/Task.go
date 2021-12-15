@@ -26,28 +26,28 @@ type TaskHacker struct {
 	Hash      string
 	Signature string
 
-	IsPermission          string              // 是否已经对测试员进行授权
-	PermissionInformation string              // 授权信息说明
-	ExpertList            []string            // 参与这次评审的专家列表
-	ReportPATH            string              // 上传报告的IPFS地址，默认空
-	TaskExpertReports     []*TaskExpertReport // 专家报告
-	Negotiations          []*TaskNegotiation  // 协商过程
+	IsPermission          string   // 是否已经对测试员进行授权
+	PermissionInformation string   // 授权信息说明
+	ExpertList            []string // 参与这次评审的专家列表
+	ReportPath            string   // 上传报告的IPFS地址，默认空
+
+	ExpertReviewReports []*ExpertReviewReport // 专家报告
+	Negotiations        []*TaskNegotiation    // 协商过程
 
 	Hacker *Hacker // 关联信息
 }
 
 // 专家报告子子对象
-type TaskExpertReport struct {
+type ExpertReviewReport struct {
 	From     string // 关联到专家表
 	TaskID   string
 	HackerID string
+	Score    string // 评分 0到100
+	Memo     string // 评语
 	Ts       string
 
 	Hash      string
 	Signature string
-
-	Score string
-	Memo  string
 }
 
 // 协商消息子子对象
@@ -61,6 +61,16 @@ type AuthorizationHackerToTaskByEnterprise struct {
 	PermissionInformation string // 授权信息
 	TaskID                string // 任务id
 	Ts                    string
+
+	Hash      string
+	Signature string
+}
+
+type TaskHackerReport struct {
+	From       string // 测试员id
+	TaskID     string
+	ReportPath string
+	Ts         string
 
 	Hash      string
 	Signature string

@@ -90,7 +90,7 @@
                     <v-file-input 
                       v-model="doms.enterprise.logoFile"
                       accept="image/*"
-                      label="点击上传Logo文件"
+                      label="点击选择 Logo 文件"
                       @change="UploadEnterpriseLogo()"></v-file-input>
                   </v-col>
                   <v-col cols="8">

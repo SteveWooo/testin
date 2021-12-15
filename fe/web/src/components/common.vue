@@ -6,6 +6,12 @@ const IPFS_API_HOST = "127.0.0.1"
 const IPFS_API_PORT = 5001
 const IPFS_GATEWAY = "http://127.0.0.1:8081"
 
+var utils = {
+    GetDate(ts) {
+        return (new Date(parseInt(ts)).getFullYear()) + '/' + ((new Date(parseInt(ts)).getMonth()) + 1) + '/' + (new Date(parseInt(ts)).getDay())
+    }
+}
+
 var secp256k1 = {
     getPrivateKeyFromString : function(privateKey){
         var buf = new Uint8Array(32)
@@ -206,5 +212,6 @@ export default {
     ls,
     secp256k1,
     api,
+    utils,
 }
 </script>

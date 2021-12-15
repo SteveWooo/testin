@@ -78,7 +78,28 @@ func (w *WorldStatus) parseTransaction(trans *Transaction.Transaction) {
 			if w.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID &&
 				w.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID {
 				w.TaskHackers[i].IsPermission = "true"
+				w.TaskHackers[i].ExpertList = []string{"047204499d849948aaffdec7ce2703f5b3"} // hard code
 				w.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
+			}
+		}
+	}
+
+	if trans.Type == "PublishReportByHacker" {
+		for i := 0; i < len(w.TaskHackers); i++ {
+			if w.TaskHackers[i].TaskID == trans.TaskHackerReport.TaskID &&
+				w.TaskHackers[i].From == trans.TaskHackerReport.From {
+				w.TaskHackers[i].ReportPath = trans.TaskHackerReport.ReportPath
+				// 清空专家评审意见
+				w.TaskHackers[i].ExpertReviewReports = []*Transaction.ExpertReviewReport{}
+			}
+		}
+	}
+
+	if trans.Type == "ReviewReportByExpert" {
+		for i := 0; i < len(w.TaskHackers); i++ {
+			if w.TaskHackers[i].TaskID == trans.ExpertReviewReport.TaskID &&
+				w.TaskHackers[i].From == trans.ExpertReviewReport.HackerID {
+				w.TaskHackers[i].ExpertReviewReports = append(w.TaskHackers[i].ExpertReviewReports, &trans.ExpertReviewReport)
 			}
 		}
 	}

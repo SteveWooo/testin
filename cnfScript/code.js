@@ -33,7 +33,26 @@ var Testin = {
                 for (var i=0;i<Status.TaskHackers.length;i++) {
                     if (Status.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID && Status.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID) {
                         Status.TaskHackers[i].IsPermission = "true"
+                        Status.TaskHackers[i].ExpertList = ["047204499d849948aaffdec7ce2703f5b3"] // hard code
                         Status.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
+                    }
+                }
+            }
+            if (trans.Type == "PublishReportByHacker" ) {
+                for (var i=0;i<Status.TaskHackers.length;i++) {
+                    if (Status.TaskHackers[i].TaskID == trans.TaskHackerReport.TaskID && Status.TaskHackers[i].From == trans.TaskHackerReport.From) {
+                        Status.TaskHackers[i].ReportPath = trans.TaskHackerReport.ReportPath
+                        // 同时清空专家评审信息
+                        Status.TaskHackers[i].ExpertReviewReports = []
+                        break
+                    }
+                }
+            }
+            if (trans.Type == "ReviewReportByExpert" ) {
+                for (var i=0;i<Status.TaskHackers.length;i++) {
+                    if (Status.TaskHackers[i].TaskID == trans.ExpertReviewReport.TaskID && Status.TaskHackers[i].From == trans.ExpertReviewReport.HackerID) {
+                        Status.TaskHackers[i].ExpertReviewReports.push(trans.ExpertReviewReport)
+                        break
                     }
                 }
             }
@@ -66,6 +85,7 @@ var Testin = {
 
     // 操作类，比如授权测试任务
     Operation : {
+        // TODO 分配专家
         AuthorizationHackerToTaskByEnterprise : {
             New : function(params) {
                 function Auth(_params) {
@@ -136,7 +156,135 @@ var Testin = {
 
                 return new Auth(params)
             }
-        }
+        },
+
+        // 测试报告提交
+        /**
+         * @param.From hackerId 
+         * @param.TaskID
+         * @param.ReportPath 报告ipfs地址
+         */
+         TaskHackerReport : {
+            New : function(params) {
+                function TaskHackerReport(_params) {
+                    // 初始化参数
+                    this.From = _params.From
+                    this.ReportPath = _params.ReportPath
+                    this.TaskID = _params.TaskID
+                    this.Ts = _params.Ts
+
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+                }
+
+                // 检查提交签名
+                TaskHackerReport.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "TaskHackerReport" + this.From + this.ReportPath + this.TaskID + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                // 检查任务 & 测试员ID的组合是否存在
+                TaskHackerReport.prototype.CheckWorldStatus = function(){
+                    var isItemExist = false
+                    for (var i=0;i<Status.TaskHackers.length;i++) {
+                        if (Status.TaskHackers[i].TaskID == this.TaskID && Status.TaskHackers[i].From == this.From) {
+                            isItemExist = true
+                            break
+                        }
+                    }
+                    if (isItemExist == false) {
+                        console.log("测试员申请不存在")
+                        return false
+                    }
+
+                    return true
+                }
+
+                return new TaskHackerReport(params)
+            }
+         },
+         /**
+          * 专家评审报告：
+          * @params From 专家ID
+          * @params TaskID 任务ID
+          * @parmas HackerID 测试员id，和任务id一起定位到具体的报告位置
+          * @params Score 评分
+          * @params Memo 评语
+          */
+         ExpertReviewReport : {
+            New : function(params) {
+                function ExpertReviewReport(_params) {
+                    // 初始化参数
+                    this.From = _params.From
+                    this.HackerID = _params.HackerID
+                    this.Memo = _params.Memo
+                    this.Score = _params.Score
+                    this.TaskID = _params.TaskID
+                    this.Ts = _params.Ts
+
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+                }
+
+                // 检查提交签名
+                ExpertReviewReport.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "ExpertReviewReport" + this.From + this.HackerID + this.Memo + this.Score + this.TaskID + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                ExpertReviewReport.prototype.CheckWorldStatus = function(){
+                    // 检查任务 & 测试员ID的组合是否存在
+                    var isItemExist = false
+                    // 检查自己是否已经评分
+                    var isAlreadyReview = false
+
+                    for (var i=0;i<Status.TaskHackers.length;i++) {
+                        if (Status.TaskHackers[i].TaskID == this.TaskID && Status.TaskHackers[i].From == this.HackerID) {
+                            isItemExist = true
+                            for (var k=0;k<Status.TaskHackers[i].ExpertReviewReports.length;k++) {
+                                if (this.From == Status.TaskHackers[i].ExpertReviewReports[k].From) {
+                                    isAlreadyReview = true
+                                }
+                            }
+
+                            break
+                        }
+                    }
+                    if (isItemExist == false) {
+                        console.log("测试员申请不存在")
+                        return false
+                    }
+                    if (isAlreadyReview == true) {
+                        console.log("专家重复评价")
+                        return false
+                    }
+
+                    return true
+                }
+
+                return new ExpertReviewReport(params)
+            }
+         }
     },
 
     // 对象类
@@ -218,6 +366,27 @@ var Testin = {
                         }
                         this.CheckWorldStatus = function(){
                             return this.AuthorizationHackerToTaskByEnterprise.CheckWorldStatus()
+                        }
+                    }
+                    if (this.Type == "PublishReportByHacker" ) {
+                        this.TaskHackerReport = Testin.Operation.TaskHackerReport.New(_params.TaskHackerReport)
+                        this.Hash = this.TaskHackerReport.Hash
+                        this.CheckSign = function(){
+                            return this.TaskHackerReport.CheckSign()
+                        }
+                        this.CheckWorldStatus = function(){
+                            return this.TaskHackerReport.CheckWorldStatus()
+                        }
+                    }
+
+                    if (this.Type == "ReviewReportByExpert") {
+                        this.ExpertReviewReport = Testin.Operation.ExpertReviewReport.New(_params.ExpertReviewReport)
+                        this.Hash = this.ExpertReviewReport.Hash
+                        this.CheckSign = function(){
+                            return this.ExpertReviewReport.CheckSign()
+                        }
+                        this.CheckWorldStatus = function(){
+                            return this.ExpertReviewReport.CheckWorldStatus()
                         }
                     }
                 }
@@ -494,7 +663,7 @@ var Testin = {
             }
         },
         /**
-         * 任务里面的测试员列表
+         * 任务里面的测试员列表（重要的报告对象）
          * @param params.Hacker 测试员对象
          */
         TaskHacker : {
@@ -511,8 +680,9 @@ var Testin = {
                     this.IsPermission = "false"
                     this.PermissionInformation = ""
                     this.ExpertList = []
-                    this.ReportPATH = []
-                    this.TaskExpertReports = []
+                    this.ReportPath = ""
+
+                    this.ExpertReviewReports = []
                     this.thisNegotiations = []
                 }
 
@@ -597,7 +767,7 @@ var Testin = {
 
                 return new TaskHacker(params)
             }
-        }
+        },
     }
 }
 
@@ -726,11 +896,6 @@ exports.PublishTaskByEnterprise = function(params) {
     MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
-// 专家审核任务
-exports.ReviewTaskByExpert = function(params) {
-
-}
-
 // 测试员申请任务
 exports.ApplyTaskByHacker = function(params){
     var taskHacker = Testin.Class.TaskHacker.New(params)
@@ -793,12 +958,63 @@ exports.AuthorizationHackerToTaskByEnterprise = function(params){
 
 // 测试员提交报告
 exports.PublishReportByHacker = function(params) {
+    var taskHackerReport = Testin.Operation.TaskHackerReport.New(params)
+    if (taskHackerReport.CheckSign() == false) {
+        console.log("提交数据签名校验失败：PublishReportByHacker");
+        return 
+    }
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
 
+    var transParam = {
+        Type : "PublishReportByHacker",
+        TaskHackerReport : taskHackerReport
+    }
+    var trans = Testin.Class.Transaction.New(transParam)
+    // 检查世界状态
+    if (trans.CheckWorldStatus() == false) {
+        console.log("交易世界状态检查失败：" + trans.Type)
+        return 
+    }
+
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
 // 专家评审报告
 exports.ReviewReportByExpert = function(params) {
+    var review = Testin.Operation.ExpertReviewReport.New(params)
+    if (review.CheckSign() == false) {
+        console.log("提交数据签名校验失败：ReviewReportByExpert");
+        return 
+    }
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
 
+    var transParam = {
+        Type : "ReviewReportByExpert",
+        ExpertReviewReport : review
+    }
+    var trans = Testin.Class.Transaction.New(transParam)
+    // 检查世界状态
+    
+    if (trans.CheckWorldStatus() == false) {
+        console.log("交易世界状态检查失败：" + trans.Type)
+        return 
+    }
+
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
 }
 
 // 企业认领报告
@@ -860,20 +1076,6 @@ exports.DoPackage = function(params) {
     // 写入新区块
     MC_AddNewBlock(JSON.stringify(block))
     console.log("新区块写入完成：" + block.Number)
-
-    // var block = {
-    //     Hash : "",
-    //     PreviousHash : "",
-    //     Number : thisBlockNumber + "",
-    //     Transactions : [],
-    //     MerkleRoot : "",
-    //     Miner : "",
-    //     Ts : (+new Date()).toString(),
-    //     Sign : "",
-    // }
-    // block.Transactions.push(trans)
-
-    // MC_AddNewBlock(JSON.stringify(block))
 }
 
 /*

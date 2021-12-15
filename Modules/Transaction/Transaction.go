@@ -19,6 +19,8 @@ type Transaction struct {
 
 	// 操作类型对象表
 	AuthorizationHackerToTaskByEnterprise AuthorizationHackerToTaskByEnterprise
+	TaskHackerReport                      TaskHackerReport
+	ExpertReviewReport                    ExpertReviewReport
 }
 
 func (t *Transaction) DoInit() {

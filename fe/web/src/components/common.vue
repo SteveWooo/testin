@@ -1,14 +1,54 @@
 <script>
 import * as secp from "@noble/secp256k1"
-import crypto from 'crypto-js'
-const BASE_URL = "http://127.0.0.1:10001"
-const IPFS_API_HOST = "127.0.0.1"
+// import * as secp from "noble-secp256k1"
+import * as cryptoJS from 'crypto-js'
+const BASE_URL = "http://192.168.10.45:10001"
+const IPFS_API_HOST = "192.168.10.45"
 const IPFS_API_PORT = 5001
-const IPFS_GATEWAY = "http://127.0.0.1:8081"
+const IPFS_GATEWAY = "http://192.168.10.45:8081"
 
 var utils = {
     GetDate(ts) {
-        return (new Date(parseInt(ts)).getFullYear()) + '/' + ((new Date(parseInt(ts)).getMonth()) + 1) + '/' + (new Date(parseInt(ts)).getDay())
+        var time = new Date(parseInt(ts))
+        return time.getFullYear() + '/' + ((time.getMonth()) + 1) + '/' + time.getDay()
+    },
+    GetDateClock(ts) {
+        var time = new Date(parseInt(ts))
+        return time.getFullYear() + '/' + ((time.getMonth()) + 1) + '/' + time.getDay() 
+            + ' ' + time.getHours() + ':' + time.getMinutes()
+    },
+    async GetMyJobs (){
+        var worldStatusRes = await api.GetWorldStatus()
+        if (worldStatusRes.Status != 2000) {
+            return 
+        }
+        var worldStatus = worldStatusRes.Data
+
+        // 个人信息初始化
+        var PersonalJobs = {
+            Hacker : false,
+            Enterprise : false,
+            Expert : false
+        };
+        var myNodeID = secp256k1.GetNodeID()
+        for(let i=0;i<worldStatus.Hackers.length;i++) {
+            if (myNodeID == worldStatus.Hackers[i].From) {
+                PersonalJobs.Hacker = true
+            }
+        }
+
+        for(let i=0;i<worldStatus.Enterprises.length;i++) {
+            if (myNodeID == worldStatus.Enterprises[i].From) {
+                PersonalJobs.Enterprise = true
+            }
+        }
+
+        for(let i=0;i<worldStatus.Experts.length;i++) {
+            if (myNodeID == worldStatus.Experts[i].From) {
+                PersonalJobs.Expert = true
+            }
+        }
+        return PersonalJobs
     }
 }
 
@@ -42,7 +82,6 @@ var secp256k1 = {
         // var source = window.Secp256k1.uint256(message)
         // var signature = window.Secp256k1.ecsign(privateKey, source)
         // console.log(signature)
-
         var signature = await secp.sign(message, pk, {
             recovered : true,
             der : false,
@@ -93,7 +132,7 @@ var api = {
         return new Promise((resolve, reject)=>{
           var now = +new Date()
           var salt = "salt" + now
-          var saltHsah = crypto.SHA256(salt).toString()
+          var saltHsah = cryptoJS.SHA256(salt).toString()
           
           secp256k1.Sign(saltHsah).then(signature=>{
             if(signature == undefined) {
@@ -124,7 +163,7 @@ var api = {
         return new Promise((resolve, reject)=>{
           var now = +new Date()
           var salt = "salt" + now
-          var saltHsah = crypto.SHA256(salt).toString()
+          var saltHsah = cryptoJS.SHA256(salt).toString()
           
           secp256k1.Sign(saltHsah).then(signature=>{
             if(signature == undefined) {
@@ -155,7 +194,7 @@ var api = {
         return new Promise((resolve, reject)=>{
           var now = +new Date()
           var salt = "salt" + now
-          var saltHsah = crypto.SHA256(salt).toString()
+          var saltHsah = cryptoJS.SHA256(salt).toString()
           
           secp256k1.Sign(saltHsah).then(signature=>{
             if(signature == undefined) {

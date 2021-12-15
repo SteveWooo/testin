@@ -23,7 +23,7 @@ func (feService *FeService) Build() {
 	feService.config = map[string]string{}
 	feService.config["httpPort"] = "10001"
 	feService.config["bcagName"] = "test"
-	feService.config["sdkRpcServer"] = "http://127.0.0.1:9024"
+	feService.config["sdkRpcServer"] = "http://192.168.10.45:9024"
 
 	worldStatus := Modules.WorldStatus{}
 	worldStatus.Build(feService.config)
@@ -44,8 +44,10 @@ func (feService *FeService) Run() {
 	http.HandleFunc("/api/common/get_task", feService.GetTask)
 
 	// 管理静态文件目录
-	fs := http.FileServer(http.Dir("static/"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	// fs := http.FileServer(http.Dir("static/"))
+	// http.Handle("/static/", http.StripPrefix("/static/", fs))
+	webFs := http.FileServer(http.Dir("web/dist/"))
+	http.Handle("/", http.StripPrefix("/", webFs))
 
 	fmt.Println("Http service listened at : " + feService.config["httpPort"])
 	// 启动HTTP服务

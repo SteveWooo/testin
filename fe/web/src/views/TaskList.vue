@@ -20,7 +20,7 @@
       </div>
 
       <div style="margin-top:20px;border:0px solid #eee;background-color:#fff;
-        padding:10px 10px 10px 10px " v-if="tasks.length != 0">
+        padding:10px 10px 10px 10px" v-if="tasks.length != 0">
         <taskList :tasks="tasks"></taskList>
         <v-row justify="center">
           <v-col cols="8">

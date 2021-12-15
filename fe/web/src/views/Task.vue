@@ -1,6 +1,7 @@
 <template>
-    <v-app v-cloak style="width:90%;margin-left:5%">
-        <div style="margin-top:30px;border:0px solid red" v-if="task != undefined">
+    <v-app v-cloak style="width:100%;margin-left:0%;background-color:#fbfbfb">
+        <div style="margin-top:30px;border:0px solid red;
+            width:94%;margin-left:3%" v-if="task != undefined">
             <v-card>
                 <v-card-title primary-title>
                     <v-row style="padding:12px 0 0 12px">
@@ -18,7 +19,7 @@
 
                                 <v-col cols="6" style="text-align:left;line-height:30px;color:#666;font-size:13px">
                                     <div >
-                                        发布日期：{{(new Date(parseInt(task.Ts)).getFullYear()) + '/' + ((new Date(parseInt(task.Ts)).getMonth()) + 1) + '/' + (new Date(parseInt(task.Ts)).getDay())}}
+                                        发布日期：{{common.utils.GetDate(task.Ts)}}
                                     </div>
                                     <div>
                                         联系方式：{{taskCreaterEnterprise.Connection}}
@@ -39,7 +40,7 @@
                         </v-col>
 
                         <v-col cols="2" style="text-align:right">
-                            <div v-if="permission.IsCreater == false && permission.IsJoinHacker == false && taskPermissionCount < task.MaxAuthorizationCount">
+                            <div v-if="personalJob.Hacker == true && permission.IsCreater == false && permission.IsJoinHacker == false && taskPermissionCount < task.MaxAuthorizationCount">
                                 <v-btn color="primary" @click="DoApply()">立刻报名</v-btn>
                             </div>
                         </v-col>
@@ -64,13 +65,6 @@
                                     {{task.Resume}}
                                 </div>
                             </v-col>
-                        </v-row>
-                    </v-card-text>
-                </v-card>
-
-                <v-card style="margin-top:15px">
-                    <v-card-text>
-                        <v-row style="text-align:left">
                             <v-col cols="12">
                                 <h3>
                                     业务需求：
@@ -104,7 +98,7 @@
                             </v-col>
                             <v-col cols="12">
                                 <h3>
-                                    报告情况：
+                                    报告文件：
                                 </h3>
                             </v-col>
                             <v-col cols="12" v-if="myTaskHackerInfo.ReportPath == ''">
@@ -115,11 +109,28 @@
                                     最新报告地址：<a :href="common.IPFS_GATEWAY + '/ipfs/' + myTaskHackerInfo.ReportPath">点击下载</a>
                                 </div>
                                 <div>
-                                    提交日期：{{common.utils.GetDate(myTaskHackerInfo.Ts)}}
+                                    提交日期：{{common.utils.GetDateClock(myTaskHackerInfo.Ts)}}
                                 </div>
                             </v-col>
                             <v-col cols="12">
                                 <v-btn small color="primary" @click="SwitchDialog('publishHackerReportDialog')">提交/修改报告</v-btn>
+                            </v-col>
+                            <v-col cols="12">
+                                <h3>
+                                    专家评审分数与评语：
+                                </h3>
+                            </v-col>
+                            <v-col cols="12">
+                                <v-row v-if="myTaskHackerInfo.ExpertReviewReports.length == 0">
+                                    <v-col cols="12">
+                                        暂无
+                                    </v-col>
+                                </v-row>
+                                <v-row dense v-if="myTaskHackerInfo.ExpertReviewReports.length>0">
+                                    <v-col cols="12" v-for="review in myTaskHackerInfo.ExpertReviewReports" :key="review.Hash">
+                                        【分数：{{review.Score}}】 评语：{{review.Memo}} -- {{common.utils.GetDateClock(review.Ts)}}
+                                    </v-col>
+                                </v-row>
                             </v-col>
                         </v-row>
                     </v-card-text>
@@ -158,11 +169,14 @@
                                             <v-col cols="2">
                                                 授权信息
                                             </v-col>
+                                            <v-col cols="12">
+                                                <v-divider style="margin-bottom:20px"></v-divider>
+                                            </v-col>
                                         </v-row>
                                     </v-list-item>
                                     <template v-for="item in task.TaskHackers">
                                         <v-list-item :key="item.From">
-                                            <v-row dense style="border:0px solid red;width:100%;">
+                                            <v-row dense style="border:0px solid red;width:100%;margin-top:5px;">
                                                 <v-col cols="2">
                                                     <h4>
                                                         {{item.Hacker.Name}}
@@ -180,10 +194,6 @@
                                                 </v-col>
                                                 <v-col cols="2">
                                                     {{item.PermissionInformation}}
-                                                </v-col>
-
-                                                <v-col cols="12">
-                                                    <v-divider :key="item.From"></v-divider>
                                                 </v-col>
                                             </v-row>
                                         </v-list-item>
@@ -224,11 +234,14 @@
                                             <v-col cols="2">
                                                 评审情况
                                             </v-col>
+                                            <v-col cols="12">
+                                                <v-divider style="margin-bottom:20px"></v-divider>
+                                            </v-col>
                                         </v-row>
                                     </v-list-item>
                                     <template v-for="item in task.TaskHackers">
                                         <v-list-item :key="item.From">
-                                            <v-row dense style="border:0px solid red;width:100%">
+                                            <v-row dense v-if="item.IsPermission=='true'" style="border:0px solid red;width:100%;margin-top:5px">
                                                 <v-col cols="2">
                                                     <h4>
                                                         {{item.Hacker.Name}}
@@ -243,7 +256,7 @@
                                                             最新报告地址：<a :href="common.IPFS_GATEWAY + '/ipfs/' + item.ReportPath">点击下载</a>
                                                         </div>
                                                         <div>
-                                                            提交日期：{{common.utils.GetDate(item.Ts)}}
+                                                            提交日期：{{common.utils.GetDateClock(item.Ts)}}
                                                         </div>
                                                     </div>
                                                     <div v-if="item.ReportPath == ''">
@@ -259,10 +272,6 @@
                                                         </v-col>
                                                     </v-row>
                                                 </v-col>
-
-                                                <v-col cols="12">
-                                                    <v-divider :key="item.From"></v-divider>
-                                                </v-col>
                                             </v-row>
                                         </v-list-item>
                                     </template>
@@ -276,14 +285,14 @@
             <!-- 专家报告评审 -->
             <div v-if="permission.IsTaskExpert" style="margin-top:15px">
                 <h3 style="text-align:left;line-height:50px;color:#666;font-size:20px">
-                    <v-icon color="blue-grey">mdi-dog</v-icon> 待审报告
+                    <v-icon color="blue">mdi-dog</v-icon> 待评审报告
                 </h3>
                 <v-card>
                     <v-card-text>
                         <v-row dense style="text-align:left">
                             <v-col cols="12">
                                 <h3>
-                                    报告总表：
+                                    报告列表：
                                 </h3>
                             </v-col>
                             <v-col cols="12">
@@ -302,11 +311,17 @@
                                             <v-col cols="2">
                                                 评审情况
                                             </v-col>
+                                            <v-col cols="12">
+                                                    <v-divider></v-divider>
+                                                </v-col>
                                         </v-row>
                                     </v-list-item>
+                                    <div style="text-align:center;margin-top:20px" v-if="expertNeedToReview.length == 0">
+                                        暂无待审报告... <v-icon color="blue">mdi-bird</v-icon>
+                                    </div>
                                     <template v-for="item in expertNeedToReview">
                                         <v-list-item :key="item.From">
-                                            <v-row dense style="border:0px solid red;width:100%">
+                                            <v-row dense style="border:0px solid red;width:100%;margin-top:5px">
                                                 <v-col cols="2">
                                                     <h4>
                                                         {{item.Hacker.Name}}
@@ -321,7 +336,7 @@
                                                             最新报告地址：<a :href="common.IPFS_GATEWAY + '/ipfs/' + item.ReportPath">点击下载</a>
                                                         </div>
                                                         <div>
-                                                            提交日期：{{common.utils.GetDate(item.Ts)}}
+                                                            提交日期：{{common.utils.GetDateClock(item.Ts)}}
                                                         </div>
                                                     </div>
                                                 </v-col>
@@ -332,10 +347,6 @@
                                                         forms.expertReview.TaskID=item.TaskID;">
                                                         评审
                                                     </v-btn>
-                                                </v-col>
-
-                                                <v-col cols="12">
-                                                    <v-divider :key="item.From"></v-divider>
                                                 </v-col>
                                             </v-row>
                                         </v-list-item>
@@ -442,6 +453,8 @@ export default {
         taskCreaterEnterprise : undefined, // 创建任务的企业信息
         permission : undefined, // 打开这歌页面的用户能获取到的情报
 
+        personalJob : {}, // 个人身份获取
+
         publishHackerReportDialog : false,
         expertReviewDialog : false,
 
@@ -470,7 +483,8 @@ export default {
     },
 
     methods : {
-        Refresh : function(){
+        Refresh : async function(){
+            this.personalJob = await common.utils.GetMyJobs()
             this.UpdateTaskDetail()
         },
 
@@ -547,6 +561,7 @@ export default {
             }
 
             alert("提交成功")
+            this.Refresh()
         },
 
         // 企业授权开发者
@@ -581,6 +596,7 @@ export default {
             }
 
             alert("提交成功")
+            this.Refresh()
         },
         // 上传报告文件到IPFS，然后获取返回的连接
         UploadReportFile : async function(){
@@ -630,6 +646,7 @@ export default {
 
             alert("提交成功")
             this.SwitchDialog("publishHackerReportDialog")
+            this.Refresh()
         },
 
         // 专家提交评审报告
@@ -664,8 +681,8 @@ export default {
 
             alert("提交成功")
             this.SwitchDialog("expertReviewDialog")
+            this.Refresh()
         }
-
     }
 }
 </script>

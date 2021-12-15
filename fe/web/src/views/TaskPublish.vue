@@ -1,14 +1,15 @@
 <template>
-  <v-app style="width:90%;margin-left:5%">
+  <v-app style="width:100%;margin-left:0%;background-color:#fbfbfb">
     <div style="margin-top:20px;border:0px solid red">
       <v-row>
-        <v-col cols="4" style="text-align:left">
-          <v-btn @click="SwitchDialog('publishDialog')">
+        <v-col cols="4"></v-col>
+        <v-col cols="4" style="text-align:center">
+          <h1>我发布的任务</h1>
+        </v-col>
+        <v-col cols="4" style="text-align:center">
+          <v-btn color="primary" small @click="SwitchDialog('publishDialog')">
             新任务发布
           </v-btn>
-        </v-col>
-        <v-col cols="4">
-          <h1>已发布的任务</h1>
         </v-col>
       </v-row>
     </div>
@@ -17,7 +18,8 @@
       暂无任务 ...<v-icon>mdi-bird</v-icon>
     </div>
 
-    <div style="margin-top:20px;border:0px solid #eee" v-if="myTasks.length != 0">
+    <div style="margin-top:20px;border:0px solid #eee;
+      width:94%;margin-left:3%;border-radius:10px" v-if="myTasks.length != 0">
       <taskList :tasks="myTasks"></taskList>
       <v-row justify="center">
         <v-col cols="8">

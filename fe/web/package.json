@@ -12,6 +12,7 @@
     "core-js": "^3.6.5",
     "crypto-js": "^4.1.1",
     "ipfs-http-client": "^54.0.2",
+    "noble-secp256k1": "^1.2.14",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
     "vuetify": "^2.4.0"

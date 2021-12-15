@@ -8,7 +8,7 @@ function onCtrlC() {
     exit
 }
 
-../../../ipfs/go-ipfs/cmd/ipfs/ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["http://localhost:10001", "http://127.0.0.1:5001", "http://127.0.0.1:8080"]'
+../../../ipfs/go-ipfs/cmd/ipfs/ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
 ../../../ipfs/go-ipfs/cmd/ipfs/ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "GET", "POST"]'
 ../../../ipfs/go-ipfs/cmd/ipfs/ipfs daemon
 

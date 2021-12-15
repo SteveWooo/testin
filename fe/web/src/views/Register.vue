@@ -1,13 +1,13 @@
 <template>
   <v-app>
-    <div>
+    <div style="margin-top:20px">
       <h1>资质认证</h1>
     </div>
-    <div style="height:50px;line-height:50px;text-align:left;padding-left:20px">
-      您现在拥有的身份：{{PersonalJobs.join("，")}}
+    <div v-if="PersonalJobs.length != 0" style="height:50px;line-height:50px;text-align:center;padding-left:20px;font-size:20px">
+      <v-icon color="blue">mdi-account</v-icon> 您已拥有的身份：{{PersonalJobs.join("，")}}
     </div>
 
-    <v-row>
+    <v-row style="margin-top:30px" v-if="PersonalJobs.length == 0">
       <v-col cols="4">
         <v-btn @click="switchDialog('hacker')">
           测试员认证
@@ -131,10 +131,10 @@
                 <v-text-field label="姓名" v-model="forms.expert.Name"></v-text-field>
               </v-col>
               <v-col cols="12">
-                <v-text-field label="社会统一编码" v-model="forms.expert.Resume"></v-text-field>
+                <v-text-field label="简介" v-model="forms.expert.Resume"></v-text-field>
               </v-col>
               <v-col cols="12">
-                <v-text-field label="联系方式" v-model="forms.expert.Qualification"></v-text-field>
+                <v-text-field label="资历" v-model="forms.expert.Qualification"></v-text-field>
               </v-col>
               <v-col col="8"></v-col>
               <v-col cols="2">

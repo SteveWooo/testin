@@ -15,7 +15,7 @@
 
                     <v-col cols="12" style="text-align:left;font-size:14px;color:#777">
                     <div>
-                        业务需求：{{item.Require}} | 发布日期：{{(new Date(parseInt(item.Ts)).getFullYear()) + '/' + ((new Date(parseInt(item.Ts)).getMonth()) + 1) + '/' + (new Date(parseInt(item.Ts)).getDay())}}
+                        业务需求：{{item.Require}} | 发布日期：{{common.utils.GetDate(item.Ts)}}
                     </div>
                     </v-col>
                     <v-col cols="12" style="text-align:left;color:#777;font-size:14px">
@@ -33,10 +33,11 @@
 </template>
 
 <script>
+import common from '../components/common.vue'
 export default {
     name : "taskList",
     data : ()=>({
-
+        common: common
     }),
     props : {
         tasks : Array

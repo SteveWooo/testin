@@ -24,8 +24,14 @@
 
     <div v-if='nodeID!=""' style="margin-top:30px">
       <v-row>
-        <v-col>
-          <v-btn red @click="Logout()">
+        <v-col cols="12">
+          已登陆NodeID：{{nodeID}}
+        </v-col>
+        <v-col cols="12" v-if="PersonalJobs.length != 0">
+          您的身份：{{PersonalJobs.join(", ")}}
+        </v-col>
+        <v-col cols="12">
+          <v-btn color="error" @click="Logout()">
             登出
           </v-btn>
         </v-col>
@@ -41,6 +47,7 @@ export default {
   data : ()=>({
     nodeID : "",
     privateKey : "",
+    PersonalJobs : []
   }),
 
   mounted : function(){
@@ -50,9 +57,41 @@ export default {
     }
     var nodeID = common.secp256k1.GetNodeIDFromPrivateKey(privateKey)
     this.nodeID = nodeID
+    this.Refresh()
   },
 
   methods : {
+    Refresh : function(){
+      this.UpdatePersonalJob()
+    },
+    UpdatePersonalJob : async function(){
+      var worldStatusRes = await common.api.GetWorldStatus()
+      if (worldStatusRes.Status != 2000) {
+        return 
+      }
+      var worldStatus = worldStatusRes.Data
+
+      // 个人信息初始化
+      this.PersonalJobs = [];
+      var myNodeID = common.secp256k1.GetNodeID()
+      for(let i=0;i<worldStatus.Hackers.length;i++) {
+        if (myNodeID == worldStatus.Hackers[i].From) {
+          this.PersonalJobs.push("测试员")
+        }
+      }
+
+      for(let i=0;i<worldStatus.Enterprises.length;i++) {
+        if (myNodeID == worldStatus.Enterprises[i].From) {
+          this.PersonalJobs.push("企业")
+        }
+      }
+
+      for(let i=0;i<worldStatus.Experts.length;i++) {
+        if (myNodeID == worldStatus.Experts[i].From) {
+          this.PersonalJobs.push("专家")
+        }
+      }
+    },
     Login : function(){
       if (this.privateKey.length != 64) {
         alert("密钥长度不正确，请重新输入")
@@ -62,8 +101,10 @@ export default {
       // 8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6
       // nodeID : 047204499d849948aaffdec7ce2703f5b3
       var nodeID = common.secp256k1.GetNodeIDFromPrivateKey(this.privateKey)
-      this.nodeID = nodeID
-      this.privateKey = ""
+      // this.nodeID = nodeID
+      // this.privateKey = ""
+      // this.Refresh()
+      window.location.reload()
     },
     Logout : function(){
       if (confirm("确认登出并清除密钥信息吗？") == false) {
@@ -72,6 +113,7 @@ export default {
       common.ls.remove("privateKey")
       this.nodeID = ""
       this.privateKey = ""
+      this.PersonalJobs = []
     }
   }
 }

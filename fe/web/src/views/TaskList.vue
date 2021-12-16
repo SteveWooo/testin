@@ -1,8 +1,10 @@
 <template>
-  <v-app style="width:100%;margin-left:0%;margin-top:00px;background-color:#fbfbfb">
-    <div style=";border:0px solid red">
+  <v-app style="width:100%;margin-left:0%;margin-top:0;background-color:#fbfbfb;border:0px solid red">
+    <div style=";border:0px solid green">
       <v-row>
-        <v-img height="300px" src="../assets/banner_1.jpg"></v-img>
+        <v-col cols="12">
+          <v-img height="300px" style="width:100%" src="../assets/banner_1.jpg"></v-img>
+        </v-col>
       </v-row>
       <v-row>
         <v-col cols="4" style="text-align:left">
@@ -14,7 +16,7 @@
       </v-row>
     </div>
 
-    <div style="width:94%;margin-left:3%;border-radius:10px;">
+    <div style="width:94%;margin-left:3%;border-radius:20px;">
       <div style="margin-top:30px;color:#777;font-size:20px" v-if="tasks.length == 0">
         暂无任务 ...<v-icon>mdi-bird</v-icon>
       </div>
@@ -36,7 +38,6 @@
         </v-row>
       </div>
     </div>
-
   </v-app>
 </template>
 

@@ -4,10 +4,10 @@
             width:94%;margin-left:3%" v-if="task != undefined">
             <v-card>
                 <v-card-title primary-title>
-                    <v-row style="padding:12px 0 0 12px">
-                        <v-col cols="2" style="border:0px solid red">
+                    <v-row style="padding:12px 12px 12px 12px">
+                        <v-col cols="2" style="border:0px solid red;text-align:right">
                             <v-img :src="taskCreaterEnterprise.LogoPath"
-                                width="100%"></v-img>
+                                width="200px"></v-img>
                         </v-col>
                         <v-col cols="8">
                             <v-row dense style="text-align:left">

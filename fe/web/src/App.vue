@@ -2,6 +2,7 @@
   <div id="app">
     <v-app-bar
       app
+      fix
       color="primary"
       dense
     >
@@ -15,7 +16,7 @@
     </v-app-bar>
     
     <v-navigation-drawer
-      app
+      
       temporary
       absolute
       v-model="drawer"
@@ -57,6 +58,7 @@
     </v-main>
 
     <v-footer
+      app
       padless
     >
       <v-card

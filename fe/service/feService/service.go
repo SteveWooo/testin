@@ -23,7 +23,8 @@ func (feService *FeService) Build() {
 	feService.config = map[string]string{}
 	feService.config["httpPort"] = "10001"
 	feService.config["bcagName"] = "test"
-	feService.config["sdkRpcServer"] = "http://192.168.10.45:9024"
+	// feService.config["sdkRpcServer"] = "http://192.168.10.45:9024"
+	feService.config["sdkRpcServer"] = "http://127.0.0.1:9024"
 
 	worldStatus := Modules.WorldStatus{}
 	worldStatus.Build(feService.config)

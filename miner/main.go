@@ -13,8 +13,9 @@ func main() {
 	trans.LoadFromJSONString("{}")
 
 	config := map[string]string{
-		"bcagName":     "test",
-		"sdkRpcServer": "http://192.168.10.45:9024",
+		"bcagName": "test",
+		// "sdkRpcServer": "http://192.168.10.45:9024",
+		"sdkRpcServer": "http://127.0.0.1:9024",
 		"privateKey":   "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6",
 	}
 

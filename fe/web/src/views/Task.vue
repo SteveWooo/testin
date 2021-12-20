@@ -176,7 +176,7 @@
                                     </v-list-item>
                                     <template v-for="item in task.TaskHackers">
                                         <v-list-item :key="item.From">
-                                            <v-row dense style="border:0px solid red;width:100%;margin-top:5px;">
+                                            <v-row dense style="border:0px solid red;width:100%;margin-top:10px;border-bottom:1px solid #eee">
                                                 <v-col cols="2">
                                                     <h4>
                                                         {{item.Hacker.Name}}
@@ -194,6 +194,11 @@
                                                 </v-col>
                                                 <v-col cols="2">
                                                     {{item.PermissionInformation}}
+                                                </v-col>
+                                                <v-col cols="12">
+                                                   <span style="font-size:10px;color:#999">
+                                                        NodeID:{{item.Hacker.Hash}}
+                                                   </span>
                                                 </v-col>
                                             </v-row>
                                         </v-list-item>
@@ -241,11 +246,15 @@
                                     </v-list-item>
                                     <template v-for="item in task.TaskHackers">
                                         <v-list-item :key="item.From">
-                                            <v-row dense v-if="item.IsPermission=='true'" style="border:0px solid red;width:100%;margin-top:5px">
+                                            <v-row dense v-if="item.IsPermission=='true'" style="border:0px solid red;width:100%;margin-top:10px;
+                                                border-bottom:1px solid #eee">
                                                 <v-col cols="2">
                                                     <h4>
                                                         {{item.Hacker.Name}}
                                                     </h4>
+                                                    <span style="color:#999;font-size:10px">
+                                                        
+                                                    </span>
                                                 </v-col>
                                                 <v-col cols="2">
                                                     {{item.Hacker.Qualification}}
@@ -271,6 +280,11 @@
                                                             {{review.Score}} : {{review.Memo}}
                                                         </v-col>
                                                     </v-row>
+                                                </v-col>
+                                                <v-col cols="12">
+                                                   <span style="font-size:10px;color:#999">
+                                                        NodeID:{{item.Hacker.Hash}}
+                                                   </span>
                                                 </v-col>
                                             </v-row>
                                         </v-list-item>

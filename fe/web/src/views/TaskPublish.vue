@@ -159,6 +159,10 @@ export default {
       for (var i in form) {
         params[i] = form[i]
       }
+      if(parseInt(params.MaxAuthorizationCount) != params.MaxAuthorizationCount) {
+        alert("最大授权人数必须输入数字")
+        return 
+      }
       var now = +new Date()
       params["Ts"] = now + ""
       params.From = common.secp256k1.GetNodeID()

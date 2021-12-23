@@ -1,7 +1,11 @@
 // 整体状态的数据结构
 var Status = {
     // 指定挖矿账号（后续应该由代表专家来做）
-    Miners : ["047204499d849948aaffdec7ce2703f5b3"],
+    Miners : ["047204499d849948aaffdec7ce2703f5b3"
+    ,"0492ec813ab9ce7c94e49c84abcb0c7d64"
+    ,"04c52654247aa39be86b5ce356ac7e24f8"
+    ,"043abf9b64da3cf82a6833d827a6a60cb1"
+    ,"0433cd50fa5977da115025e90cf5698c08"],
 
     Hackers : [],
     Experts : [],
@@ -33,7 +37,8 @@ var Testin = {
                 for (var i=0;i<Status.TaskHackers.length;i++) {
                     if (Status.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID && Status.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID) {
                         Status.TaskHackers[i].IsPermission = "true"
-                        Status.TaskHackers[i].ExpertList = ["047204499d849948aaffdec7ce2703f5b3"] // hard code
+                        // Status.TaskHackers[i].ExpertList = ["047204499d849948aaffdec7ce2703f5b3"] // hard code
+                        Status.TaskHackers[i].ExpertList = [] // 改成任何人都可以评价
                         Status.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
                     }
                 }
@@ -62,6 +67,7 @@ var Testin = {
         var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
         for (var i=0;i<blocks.length;i++) {
             var block = JSON.parse(blocks[i])
+            // TODO：加载区块矿工，调整信誉值
             for (k=0;k<block.Transactions.length;k++) {
                 // 构建黑客身份状态
                 var trans = block.Transactions[k]
@@ -83,7 +89,98 @@ var Testin = {
         // console.log(JSON.stringify(Status))
     },
 
-    // 操作类，比如授权测试任务
+    // 共识过程中出现的操作类
+    Consensus : {
+        // 打包意向发布
+        PackageIntention : {
+            New : function(params) {
+                function PackageIntention(_params) {
+                    // 初始化参数
+                    this.From = _params.From
+                    this.Intention = _params.Intention
+                    this.Term = _params.Term
+                    this.Ts = _params.Ts
+
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+                }
+
+                // 检查提交签名
+                PackageIntention.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "DoPackageIntention" + this.From + this.Intention + this.Term + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                // 查询投票参与者是否属于矿工列表
+                PackageIntention.prototype.CheckWorldStatus = function(){
+                    for(var i=0;i<Status.Miners.length;i++) {
+                        if (Status.Miners[i] == this.From) {
+                            return true
+                        }
+                    }
+                    return false                    
+                }
+
+                return new PackageIntention(params)
+            }
+        },
+
+        // 打包权威排行分布
+        IntentionRank : {
+            New : function(params) {
+                function IntentionRank(_params) {
+                    // 初始化参数
+                    this.From = _params.From
+                    this.Rank_1 = _params.Rank_1
+                    this.Term = _params.Term
+                    this.Ts = _params.Ts
+
+                    this.Hash = _params.Hash
+                    this.Signature = _params.Signature
+                }
+
+                // 检查提交签名
+                IntentionRank.prototype.CheckSign = function(){
+                    // 校验Hash
+                    var source = "ShareIntentionRank" + this.From + this.Rank_1 + this.Term + this.Ts
+                    var hash = MC_Sha256(source)
+                    if (this.Hash != hash) { // 哈希校验失败
+                        return false
+                    }
+
+                    if (!MC_Secp256k1_Check(hash, this.Signature, this.From)) { // 签名校验失败
+                        return false
+                    }
+
+                    return true
+                }
+
+                // 查询投票参与者是否属于矿工列表
+                IntentionRank.prototype.CheckWorldStatus = function(){
+                    for(var i=0;i<Status.Miners.length;i++) {
+                        if (Status.Miners[i] == this.From) {
+                            return true
+                        }
+                    }
+                    return false                    
+                }
+
+                return new IntentionRank(params)
+            }
+        }
+    },
+
+    // 业务操作类，比如授权测试任务
     Operation : {
         // TODO 分配专家
         AuthorizationHackerToTaskByEnterprise : {
@@ -1020,6 +1117,70 @@ exports.ReviewReportByExpert = function(params) {
 // 企业认领报告
 exports.ConfirmTaskByEnterprise = function(params) {
 
+}
+
+// 出块意向，调用该接口代表宣布本人是否愿意参与到下一轮的出块环节中
+// 出块意向缓存到缓存中，等待矿工拉取使用
+// @params.From
+// @params.Intention true / false 是否参与出块
+// @params.Term 轮次，用于标识重试次数
+// @params.Ts 时间戳
+// @parmas.Hash 
+// @parmas.Signature
+exports.DoPackageIntention = function(params) {
+    var packageIntention = Testin.Consensus.PackageIntention.New(params.PackageIntention)
+    if (packageIntention.CheckSign() == false ) {
+        console.log("提交数据签名校验失败：DoPackageIntention");
+        return 
+    }
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
+    // 直接检查打包意向的世界状态即可，共识机制不需要缝成一个交易
+    if (packageIntention.CheckWorldStatus() == false ) {
+        console.log("打包意向检查世界状态失败：DoPackageIntention");
+        return 
+    }
+
+    // 缓存打包意向，等待矿工拉取
+    // *这个打包意向缓存在被打包后，要清除掉
+    // 把交易缓存起来，等待矿工拉取
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_DeleteCacheByPrefix("packageIntentionCache-" + thisBlockNumber + "-")
+    MC_SetCache("packageIntentionCache-" + thisBlockNumber + "-" + packageIntention.Term + "-" + packageIntention.From, 
+        JSON.stringify(packageIntention))
+}
+
+// 矿工节点收集到2/3个打包意向后，对有意向的出块者进行排名，广播第一名出来
+// @params.From
+// @params.Rank_1 string,string 第一名的NodeID，可用逗号分隔并列，并列NodeID通过哈希环随机算法进行排序
+// @params.
+exports.ShareIntentionRank = function(params){
+    var intentionRank = Testin.Consensus.IntentionRank.New(params.IntentionRank)
+    if (intentionRank.CheckSign() == false ) {
+        console.log("提交数据签名校验失败：ShareIntentionRank");
+        return 
+    }
+    Testin.BuildWorldStatus({
+        LoadCache : true
+    })
+    // 直接检查打包意向的世界状态即可，共识机制不需要缝成一个交易
+    if (intentionRank.CheckWorldStatus() == false ) {
+        console.log("打包意向检查世界状态失败：ShareIntentionRank");
+        return 
+    }
+
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+
+    // 后续打包的时候，严格检查这个缓存
+    // 如果打包者确实达到了2/3的投票数量，就ok
+    // 否则打包失败
+    MC_SetCache("packageIntentionRankCache-" + thisBlockNumber + "-" + intentionRank.Term + "-" + intentionRank.From, 
+        JSON.stringify(intentionRank))
 }
 
 // 新区块

@@ -377,7 +377,7 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 	isCreater := false
 	isJoinHacker := false
 	isPremissionHacker := false
-	isTaskExpert := false
+	isTaskExpert := true
 
 	if task.From == queryParams["node_id"][0] {
 		isCreater = true
@@ -416,12 +416,12 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 				continue
 			}
 
-			for k := 0; k < len(taskHackers[i].ExpertList); k++ {
-				if taskHackers[i].ExpertList[k] == queryParams["node_id"][0] {
-					isTaskExpert = true
-					break
-				}
-			}
+			// for k := 0; k < len(taskHackers[i].ExpertList); k++ {
+			// 	if taskHackers[i].ExpertList[k] == queryParams["node_id"][0] {
+			// 		isTaskExpert = true
+			// 		break
+			// 	}
+			// }
 		}
 	}
 
@@ -444,22 +444,31 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 				continue
 			}
 			// 判断是否专家
-			for k := 0; k < len(taskHackers[i].ExpertList); k++ {
-				if queryParams["node_id"][0] == taskHackers[i].ExpertList[k] {
-					// 是这个任务的指定专家了，判断是否已经评审完成
-					alreadyReview := false
-					for j := 0; j < len(taskHackers[i].ExpertReviewReports); j++ {
-						if queryParams["node_id"][0] == taskHackers[i].ExpertReviewReports[j].From {
-							alreadyReview = true
-						}
-					}
+			// for k := 0; k < len(taskHackers[i].ExpertList); k++ {
+			// 	if queryParams["node_id"][0] == taskHackers[i].ExpertList[k] {
+			// 		// 是这个任务的指定专家了，判断是否已经评审完成
+			// 		alreadyReview := false
+			// 		for j := 0; j < len(taskHackers[i].ExpertReviewReports); j++ {
+			// 			if queryParams["node_id"][0] == taskHackers[i].ExpertReviewReports[j].From {
+			// 				alreadyReview = true
+			// 			}
+			// 		}
 
-					if alreadyReview == false {
-						expertNeedToReview = append(expertNeedToReview, taskHackers[i])
-					}
+			// 		if alreadyReview == false {
+			// 			expertNeedToReview = append(expertNeedToReview, taskHackers[i])
+			// 		}
 
-					break
+			// 		break
+			// 	}
+			// }
+			alreadyReview := false
+			for j := 0; j < len(taskHackers[i].ExpertReviewReports); j++ {
+				if queryParams["node_id"][0] == taskHackers[i].ExpertReviewReports[j].From {
+					alreadyReview = true
 				}
+			}
+			if alreadyReview == false {
+				expertNeedToReview = append(expertNeedToReview, taskHackers[i])
 			}
 		}
 	}

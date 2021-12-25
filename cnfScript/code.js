@@ -1259,7 +1259,7 @@ function getMinerOfThisRound(term){
         }
     }
 
-    console.log(JSON.stringify(rank1MaxMiner))
+    // console.log(JSON.stringify(rank1MaxMiner))
 
     return rank1MaxMiner[0]
 }
@@ -1318,7 +1318,9 @@ exports.DoPackage = function(params) {
     }
 
     // 删除以往的所有相关缓存，防止缓存冗余
-    MC_DeleteCacheByPrefix("transCache-" + topBlock.Number + "-")
+    MC_DeleteCacheByPrefix("transCache-" + topBlock.Number + "-") // 删除交易缓存
+    MC_DeleteCacheByPrefix("packageIntentionCache-") // 删除Intention缓存
+    MC_DeleteCacheByPrefix("packageIntentionRankCache-") // 删除Intention排行缓存
 
     // 写入新区块
     MC_AddNewBlock(JSON.stringify(block))

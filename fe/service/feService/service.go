@@ -377,10 +377,18 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 	isCreater := false
 	isJoinHacker := false
 	isPremissionHacker := false
-	isTaskExpert := true
+	isTaskExpert := false // 判断是否专家即可
 
 	if task.From == queryParams["node_id"][0] {
 		isCreater = true
+	}
+
+	// 判断参与者是否专家
+	for i := 0; i < len(feService.WorldStatus.Experts); i++ {
+		if feService.WorldStatus.Experts[i].From == queryParams["node_id"][0] {
+			isTaskExpert = true
+			break
+		}
 	}
 
 	// 找出该任务下的所有参与者

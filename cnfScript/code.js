@@ -718,7 +718,7 @@ var Testin = {
 
                     // 运作参数（不参与签名
                     this.TaskHackers = []
-                    this.IsPublic = false // 默认任务为不公开任务
+                    this.IsPublic = "false" // 默认任务为不公开任务
 
                     this.Hash = _params.Hash
                     this.Signature = _params.Signature
@@ -1183,6 +1183,87 @@ exports.ShareIntentionRank = function(params){
         JSON.stringify(intentionRank))
 }
 
+// 核心共识机制，选主逻辑
+function getMinerOfThisRound(term){
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+    var thisBlockNumber = parseInt(topBlock.Number) + 1
+
+    var intentionRanks = MC_GetCacheByPrefix("packageIntentionRankCache-" + thisBlockNumber + "-" + term + "-")
+    intentionRanks = JSON.parse(intentionRanks)
+
+    // 每个节点获得第一名次数
+    var ranker1List = {}
+    for(var i=0;i<intentionRanks.length;i++) {
+        var ir = JSON.parse(intentionRanks[i])
+        var maxRankers = ir["Rank_1"].split(",")
+        for (var k=0;k<maxRankers.length;k++) {
+            if(ranker1List[maxRankers[k]] == undefined) {
+                ranker1List[maxRankers[k]] = {
+                    count : 0
+                }
+            }
+            ranker1List[maxRankers[k]].count = ranker1List[maxRankers[k]].count + 1
+        }
+    }
+
+    // 获得第一名的最大次数
+    var rank1MaxCount = 0
+    for (var nid in ranker1List) {
+        if (ranker1List[nid].count > rank1MaxCount) {
+            rank1MaxCount = ranker1List[nid].count
+        }
+    }
+
+    // 2/3 * n + 1
+    // 最少的认可次数需要是2/3 TODO，其实应该1/3就ok，后面有平票逻辑处理。
+    // 强行2/3的话，可能会导致重试率很高
+    var minIntentionCount = Math.floor((2/3) * Status.Miners.length) + 1
+    if (rank1MaxCount < minIntentionCount) {
+        console.log("票数第一节点未达到最低要求区块")
+        return undefined
+    }
+
+    // 出现平票情况的节点：
+    rank1MaxMiner = []
+    for (var nid in ranker1List) {
+        if (ranker1List[nid].count == rank1MaxCount) {
+            rank1MaxMiner.push(nid)
+        }
+    }
+
+    // 对平票节点进行排序（哈希环伪随机算法
+    // 03d40bf3 -> 64228339
+    var startHash = topBlock.Hash
+    var hashRangeStartNum = parseInt("0x" + startHash.substring(0, 8))
+    // 冒泡
+    for(var i=0;i<rank1MaxMiner.length;i++) {
+        for (var k=i+1;k<rank1MaxMiner.length;k++) {
+            var nodeIDNumForI = parseInt("0x" + rank1MaxMiner[i].substring(2, 10))
+            var nodeIDNumForK = parseInt("0x" + rank1MaxMiner[k].substring(2, 10))
+            nodeIDNumForI = nodeIDNumForI - hashRangeStartNum
+            nodeIDNumForK = nodeIDNumForK - hashRangeStartNum
+
+            if (nodeIDNumForI < 0) {
+                nodeIDNumForI = 4294967295 + nodeIDNumForI
+            }
+            if (nodeIDNumForK < 0) {
+                nodeIDNumForK = 4294967295 + nodeIDNumForK
+            }
+
+            if (nodeIDNumForI < nodeIDNumForK) {
+                var temp = rank1MaxMiner[i]
+                rank1MaxMiner[i] = rank1MaxMiner[k]
+                rank1MaxMiner[k] = temp
+            }
+        }
+    }
+
+    console.log(JSON.stringify(rank1MaxMiner))
+
+    return rank1MaxMiner[0]
+}
+
 // 新区块
 // @params.block 新区块的整体内容
 exports.DoPackage = function(params) {
@@ -1192,13 +1273,6 @@ exports.DoPackage = function(params) {
     // 构建一个区块对象
     // console.log(JSON.stringify(params))
     var block = Testin.Class.Block.New(params.Block)
-
-    // TODO 共识逻辑
-    if (block.Miner != Status.Miners[0]) {
-        console.log("非法打包")
-        return 
-    }
-
     if (block.PreviousHash != topBlock.Hash) {
         console.log("区块PreviousHash错误")
         return 
@@ -1218,6 +1292,18 @@ exports.DoPackage = function(params) {
     Testin.BuildWorldStatus({
         LoadCache : false
     })
+
+    // 核心：共识逻辑 - 获取当前轮次的Master
+    var roundMiner = getMinerOfThisRound(params.Term)
+    if(roundMiner == undefined) {
+        console.log("非法打包")
+        return 
+    }
+    if (block.Miner != roundMiner) {
+        console.log("非法打包")
+        return 
+    }
+
     for (var i=0;i<block.Transactions.length;i++) {
         if (block.Transactions[i].CheckWorldStatus() == false) {
             MC_DeleteCacheByPrefix("transCache-" + block.Number + "-" + block.Transactions[i].Hash)

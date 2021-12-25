@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -32,6 +33,8 @@ func (m *Miner) Build(config map[string]string) {
 // ->拉取最高
 func (m *Miner) RunProofOfBussinessReputation() {
 	time.Sleep(time.Second * 1)
+	// 用来控制轮数
+	Term := 1
 	for {
 		time.Sleep(time.Second * 3)
 
@@ -39,7 +42,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 		packageIntention := ConsensusModules.PackageIntention{}
 		packageIntention.From = m.config["nodeID"]
 		packageIntention.Intention = "true"
-		packageIntention.Term = "1"
+		packageIntention.Term = strconv.Itoa(Term)
 		packageIntention.Ts = strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
 		packageIntention.Sign(m.config["privateKey"])
 
@@ -65,6 +68,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 				continue
 			}
 
+			// 参与联盟共识的节点必须是miner列表之中的节点才行
 			ledgePisCount := 0
 			for i := 0; i < len(pis); i++ {
 				for k := 0; k < len(m.WorldStatus.Miners); k++ {
@@ -76,7 +80,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 			}
 
 			// 计算看是否达到2/3参与者
-			minCandicateCount := math.Floor(float64(len(m.WorldStatus.Miners)) * 2 / 3)
+			minCandicateCount := math.Floor(float64(len(m.WorldStatus.Miners))*2/3) + 1
 			if ledgePisCount < int(minCandicateCount) {
 				// 规定次数内，没达到2/3意向者的话，就重新进入投票环节（说明出现平票情况，处理速度无限快的情况下，出现的概率为 pow(1/3, n)
 				continue
@@ -161,7 +165,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 					}
 				}
 				// 计算看是否达到2/3参与者
-				minIntentionRankCandicateCount := math.Floor(float64(len(m.WorldStatus.Miners)) * 2 / 3)
+				minIntentionRankCandicateCount := math.Floor(float64(len(m.WorldStatus.Miners))*2/3) + 1
 				if ledgePirCount < int(minIntentionRankCandicateCount) {
 					// 规定次数内，没达到2/3意向者的话，就重新进入投票环节（说明出现平票情况，处理速度无限快的情况下，出现的概率为 pow(1/3, n)
 					continue
@@ -231,17 +235,109 @@ func (m *Miner) RunProofOfBussinessReputation() {
 
 				// 7 如果NodeID是自己，就打包
 				// 7 如果NodeID不是自己，就监听最新区块信息。如果得到最新区块的话，
+				localTopBlock := m.WorldStatus.GetLocalTopBlock() // 先获取打包前的本地最高区块
 				if rank1MaxMiners[0] == m.config["nodeID"] {
 					fmt.Println("我要打包了:" + m.config["nodeID"])
+					for {
+						// 打包到成功为止，一般就是节点没交易缓存，就打包不了
+						time.Sleep(time.Second * 2)
+						packageErr := m.doPackage(strconv.Itoa(Term))
+						if packageErr == nil {
+							break
+						}
+						fmt.Println(packageErr)
+					}
 				} else {
 					fmt.Println("我不需要打包:" + m.config["nodeID"])
 				}
 
 				// 8 持续拉最新区块，当最新区块更新后，重新开始流程
+				for {
+					time.Sleep(1 * time.Second)
+					remoteTopBlock := m.WorldStatus.GetRemoteTopBlock()
+					localTopBlockNumber, _ := strconv.Atoi(localTopBlock.Number)
+					remoteTopBlockNumber, _ := strconv.Atoi(remoteTopBlock.Number)
+					if remoteTopBlockNumber > localTopBlockNumber {
+						fmt.Println("完成打包，区块编号: " + remoteTopBlock.Number)
+						m.WorldStatus.AddNewLocalBlock(remoteTopBlock)
+						m.WorldStatus.DoBuildStatus()
+						break
+					}
 
+					if remoteTopBlockNumber == localTopBlockNumber {
+						fmt.Println("远程节点共识打包中...")
+						continue
+					}
+
+					panic("远程节点区块编号比本地低，请确认节点配置")
+				}
+				break
 			}
+			break
 		}
 	}
+}
+
+// 拉取交易，生成打包区块
+// @params Term 选主轮次
+func (m *Miner) doPackage(Term string) error {
+	// 1 检查最新区块是否和本地一致
+	remoteTopBlock := m.WorldStatus.GetRemoteTopBlock()
+	remoteBlockNumber, _ := strconv.Atoi(remoteTopBlock.Number)
+	localTopBlock := m.WorldStatus.GetLocalTopBlock()
+	localBlockNumber, _ := strconv.Atoi(localTopBlock.Number)
+	// 本地区块为节点上共识的区块时，拉取缓存交易，尝试进行打包
+	if localBlockNumber == remoteBlockNumber {
+		trans, err := m.WorldStatus.GetRemoteTransactionCache()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		// TODO检查交易，排除掉无效交易。但这个检查其实在cvm中就有，矿工不一定必须提交该检查
+
+		if len(trans) == 0 {
+			return errors.New("远程节点无缓存交易")
+		}
+
+		// 进行打包
+		newBlockNumber := remoteBlockNumber + 1
+
+		block := Modules.Block{}
+		block.PreviousHash = remoteTopBlock.Hash
+		block.Number = strconv.Itoa(newBlockNumber)
+		block.Miner = m.config["nodeID"]
+		block.Ts = strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+		block.Transactions = trans
+		block.Sign(m.config["privateKey"])
+
+		callDoPackResp, err := SdkApi.CallTrans(m.config, map[string]interface{}{
+			"MC_Call": "DoPackage",
+			"Block":   block,
+			"Term":    Term,
+		})
+		if err != nil {
+			return errors.New("请求sdk出错:" + err.Error())
+		}
+		if callDoPackResp.Status != 2000 {
+			return errors.New("sdk报错：" + callDoPackResp.Message)
+		}
+
+		// 把自己打包好的区块写入本地缓存
+		// m.WorldStatus.AddNewLocalBlock(&block)
+		// m.WorldStatus.DoBuildStatus()
+
+		return nil // 返回空代表打包发布完成
+	}
+
+	if localBlockNumber < remoteBlockNumber {
+		// TODO动态规划优化
+		m.WorldStatus.FetchAllBlocks()
+		m.WorldStatus.DoBuildStatus()
+		return errors.New("本地区块尚未与节点区块同步")
+	}
+
+	panic("本地区块比远程区块还高，请确认是否已经完成配置")
 }
 
 func (m *Miner) Run() {

@@ -1,6 +1,6 @@
 package modules
 
-// 执行一次打包操作的变量，需要被for循环重复使用，所以要靠结构体来释放内存空间
+// TODO 抽象选主流程
 type PoBR struct {
 	config    map[string]string
 	Term      string

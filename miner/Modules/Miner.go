@@ -62,7 +62,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 			for {
 				time.Sleep(time.Second * 2)
 				// 有可能因为获取到的缓存数据不到2/3，导致计算失败
-				rank1MaxMiners, err := m.PoBR_GetMaxReputationMiner(Term)
+				rank1MaxMiner, err := m.PoBR_GetMaxReputationMiner(Term)
 				if err != nil {
 					fmt.Println(err)
 					continue
@@ -70,7 +70,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 
 				// 4 如果NodeID是自己，就打包
 				// 如果NodeID不是自己，就监听最新区块信息。如果得到最新区块的话，
-				if rank1MaxMiners[0] == m.config["nodeID"] {
+				if rank1MaxMiner == m.config["nodeID"] {
 					fmt.Println("我要打包了:" + m.config["nodeID"])
 					m.PoBR_DoPackage(Term)
 				} else {
@@ -194,11 +194,11 @@ func (m *Miner) PoBR_SendRepuationRank(Term int) error {
 }
 
 // 从节点上获取最新的排行缓存数据。计算出排名最高矿工
-func (m *Miner) PoBR_GetMaxReputationMiner(Term int) ([]string, error) {
+func (m *Miner) PoBR_GetMaxReputationMiner(Term int) (string, error) {
 	pir, err := m.WorldStatus.GetRemoteIntentionRankCache(strconv.Itoa(Term))
 	if err != nil {
 		fmt.Println(err)
-		return nil, err
+		return "", err
 	}
 
 	// 计算IntentionRank数据是否达到2/3参与者
@@ -213,7 +213,7 @@ func (m *Miner) PoBR_GetMaxReputationMiner(Term int) ([]string, error) {
 	}
 	minIntentionRankCandicateCount := m.PoBR_GetMinCandicateCount()
 	if ledgePirCount < int(minIntentionRankCandicateCount) {
-		return nil, errors.New("有效共识参与者信誉排行数据不足")
+		return "", errors.New("有效共识参与者信誉排行数据不足")
 	}
 
 	rank1List := map[string]int{} // NodeID获得第一名的次数
@@ -235,7 +235,7 @@ func (m *Miner) PoBR_GetMaxReputationMiner(Term int) ([]string, error) {
 	// 最大的认可次数未达到2/3总数
 	if float64(rank1MaxCount) < minIntentionRankCandicateCount {
 		// 规定次数内，没达到2/3意向者的话，就重新进入投票环节（说明出现平票情况，处理速度无限快的情况下，出现的概率为 pow(1/3, n)
-		return nil, errors.New("最大认可数未达到2/3")
+		return "", errors.New("最大认可数未达到2/3")
 	}
 
 	rank1MaxMiners := []string{} // 获得最大次数的Miner，即可参与最终排名
@@ -257,16 +257,17 @@ func (m *Miner) PoBR_GetMaxReputationMiner(Term int) ([]string, error) {
 		for k := i + 1; k < len(rank1MaxMiners); k++ {
 			nodeIDNumForI, _ := strconv.ParseUint(rank1MaxMiners[i][2:10], 16, 32)
 			nodeIDNumForK, _ := strconv.ParseUint(rank1MaxMiners[k][2:10], 16, 32)
-			nodeIDNumForI = nodeIDNumForI - hashRangeStartNum
-			nodeIDNumForK = nodeIDNumForK - hashRangeStartNum
 
-			// "ffffffff" - 自己，回退一个环
-			if nodeIDNumForI < 0 {
-				nodeIDNumForI = 4294967295 + nodeIDNumForI
-			}
-			if nodeIDNumForK < 0 {
-				nodeIDNumForK = 4294967295 + nodeIDNumForK
-			}
+			// 废置，这样不公平
+			// nodeIDNumForI = nodeIDNumForI - hashRangeStartNum
+			// nodeIDNumForK = nodeIDNumForK - hashRangeStartNum
+			// // "ffffffff" - 自己，回退一个环
+			// if nodeIDNumForI < 0 {
+			// 	nodeIDNumForI = 4294967295 + nodeIDNumForI
+			// }
+			// if nodeIDNumForK < 0 {
+			// 	nodeIDNumForK = 4294967295 + nodeIDNumForK
+			// }
 
 			// 越大越靠前
 			if nodeIDNumForI < nodeIDNumForK {
@@ -276,7 +277,10 @@ func (m *Miner) PoBR_GetMaxReputationMiner(Term int) ([]string, error) {
 			}
 		}
 	}
-	return rank1MaxMiners, nil
+	// 哈希环起点求余即可
+	randomMinerIndex := int(hashRangeStartNum) % len(rank1MaxMiners)
+
+	return rank1MaxMiners[randomMinerIndex], nil
 }
 
 // PoBR算法的打包流程：持续获取节点上的交易缓存，有的话，就打包下来。

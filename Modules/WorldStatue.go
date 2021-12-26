@@ -39,11 +39,7 @@ func (w *WorldStatus) Build(config map[string]string) {
 	w.config = config
 
 	// 正常情况下的矿工应该是专家列表。这里hardcode矿工是为了初始化启动网络
-	w.Miners = []string{"047204499d849948aaffdec7ce2703f5b3",
-		"0492ec813ab9ce7c94e49c84abcb0c7d64",
-		"04c52654247aa39be86b5ce356ac7e24f8",
-		"043abf9b64da3cf82a6833d827a6a60cb1",
-		"0433cd50fa5977da115025e90cf5698c08"}
+	w.Miners = []string{"047204499d849948aaffdec7ce2703f5b3", "0433cd50fa5977da115025e90cf5698c08", "043abf9b64da3cf82a6833d827a6a60cb1", "04c52654247aa39be86b5ce356ac7e24f8", "0492ec813ab9ce7c94e49c84abcb0c7d64", "049075a782f699fd18ca64cf7ccb0b7ef5", "0429285759acca19681489804066c123fe", "04b291af0ad8ed77f167d2d89da6dd310a", "04ae7e5a2f9b426f0f18df1f4629e408ad", "043f7acc95c1bf43ebd4bb7313979f427e", "04961d37561a0cb5f8efaf95b555943b77", "04bde666ba0e9078328897a8087cccc14a", "041ba0e83f3e7962a388f5c0296ccacfe5", "04d1f611569df79cff3d05a6aa8553bc7e", "0475bb62e72d9fe2d92e542ee4f7aefd24", "045ff90b3a6ea54f58178aeb4a6c60f81c", "04f4b26de40eb5fc31bca10918bf414d41", "04cb4cbd636d6694e4f992f54f65f1daa8", "04cf8554facafcac058c70aa6ffc38a139", "0458df0e6a93a464ca2de7fd4a13049b5b"}
 }
 
 // 以对象形式返回一个世界状态
@@ -137,6 +133,11 @@ func (w *WorldStatus) parseTransaction(trans *Transaction.Transaction) {
 // 按照现有区块，构建世界状态
 func (w *WorldStatus) DoBuildStatus() {
 	w.cleanStatus()
+	// 初始化矿工的信誉值
+	for i := 0; i < len(w.Miners); i++ {
+		w.Repuations[w.Miners[i]] = 0
+	}
+
 	for i := 0; i < len(w.blocks); i++ {
 		// 每新增一个区块，就要清空区块打包者的Repuation
 		for nid, _ := range w.Repuations {

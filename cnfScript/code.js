@@ -1,11 +1,16 @@
 // 整体状态的数据结构
 var Status = {
     // 指定挖矿账号（后续应该由代表专家来做）
-    Miners : ["047204499d849948aaffdec7ce2703f5b3"
-    ,"0492ec813ab9ce7c94e49c84abcb0c7d64"
-    ,"04c52654247aa39be86b5ce356ac7e24f8"
-    ,"043abf9b64da3cf82a6833d827a6a60cb1"
-    ,"0433cd50fa5977da115025e90cf5698c08"],
+    Miners : ["047204499d849948aaffdec7ce2703f5b3","0433cd50fa5977da115025e90cf5698c08",
+    "043abf9b64da3cf82a6833d827a6a60cb1","04c52654247aa39be86b5ce356ac7e24f8",
+    "0492ec813ab9ce7c94e49c84abcb0c7d64","049075a782f699fd18ca64cf7ccb0b7ef5",
+    "0429285759acca19681489804066c123fe","04b291af0ad8ed77f167d2d89da6dd310a",
+    "04ae7e5a2f9b426f0f18df1f4629e408ad","043f7acc95c1bf43ebd4bb7313979f427e",
+    "04961d37561a0cb5f8efaf95b555943b77","04bde666ba0e9078328897a8087cccc14a",
+    "041ba0e83f3e7962a388f5c0296ccacfe5","04d1f611569df79cff3d05a6aa8553bc7e",
+    "0475bb62e72d9fe2d92e542ee4f7aefd24","045ff90b3a6ea54f58178aeb4a6c60f81c",
+    "04f4b26de40eb5fc31bca10918bf414d41","04cb4cbd636d6694e4f992f54f65f1daa8",
+    "04cf8554facafcac058c70aa6ffc38a139","0458df0e6a93a464ca2de7fd4a13049b5b"],
 
     Hackers : [],
     Experts : [],
@@ -64,15 +69,22 @@ var Testin = {
         }
 
         var topBlock = JSON.parse(MC_GetTopBlock())
-        var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
-        for (var i=0;i<blocks.length;i++) {
-            var block = JSON.parse(blocks[i])
-            // TODO：加载区块矿工，调整信誉值
-            for (k=0;k<block.Transactions.length;k++) {
-                // 构建黑客身份状态
-                var trans = block.Transactions[k]
-                loadTrans(trans)
+        var worldStatus = MC_GetCache("worldStatus")
+        if(worldStatus == "") {
+            var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
+            for (var i=0;i<blocks.length;i++) {
+                var block = JSON.parse(blocks[i])
+                // TODO：加载区块矿工，调整信誉值
+                for (k=0;k<block.Transactions.length;k++) {
+                    // 构建黑客身份状态
+                    var trans = block.Transactions[k]
+                    loadTrans(trans)
+                }
             }
+
+            MC_SetCache("worldStatus", JSON.stringify(Status))
+        } else {
+            Status = JSON.parse(worldStatus)
         }
 
         // 缓存中的合法交易也要加入其中，防止交易重复提交
@@ -1241,15 +1253,15 @@ function getMinerOfThisRound(term){
         for (var k=i+1;k<rank1MaxMiner.length;k++) {
             var nodeIDNumForI = parseInt("0x" + rank1MaxMiner[i].substring(2, 10))
             var nodeIDNumForK = parseInt("0x" + rank1MaxMiner[k].substring(2, 10))
-            nodeIDNumForI = nodeIDNumForI - hashRangeStartNum
-            nodeIDNumForK = nodeIDNumForK - hashRangeStartNum
+            // nodeIDNumForI = nodeIDNumForI - hashRangeStartNum
+            // nodeIDNumForK = nodeIDNumForK - hashRangeStartNum
 
-            if (nodeIDNumForI < 0) {
-                nodeIDNumForI = 4294967295 + nodeIDNumForI
-            }
-            if (nodeIDNumForK < 0) {
-                nodeIDNumForK = 4294967295 + nodeIDNumForK
-            }
+            // if (nodeIDNumForI < 0) {
+            //     nodeIDNumForI = 4294967295 + nodeIDNumForI
+            // }
+            // if (nodeIDNumForK < 0) {
+            //     nodeIDNumForK = 4294967295 + nodeIDNumForK
+            // }
 
             if (nodeIDNumForI < nodeIDNumForK) {
                 var temp = rank1MaxMiner[i]
@@ -1258,10 +1270,14 @@ function getMinerOfThisRound(term){
             }
         }
     }
-
     // console.log(JSON.stringify(rank1MaxMiner))
+    if (rank1MaxMiner.length == 0) {
+        return undefined
+    }
+    
+    var randomMinerIndex = MC_Mod(hashRangeStartNum, rank1MaxMiner.length)
 
-    return rank1MaxMiner[0]
+    return rank1MaxMiner[randomMinerIndex]
 }
 
 // 新区块
@@ -1296,11 +1312,11 @@ exports.DoPackage = function(params) {
     // 核心：共识逻辑 - 获取当前轮次的Master
     var roundMiner = getMinerOfThisRound(params.Term)
     if(roundMiner == undefined) {
-        console.log("非法打包")
+        console.log("非法打包: roundMiner为空")
         return 
     }
     if (block.Miner != roundMiner) {
-        console.log("非法打包")
+        console.log("非法打包: "+block.Miner+" 非roundMiner:" + roundMiner)
         return 
     }
 
@@ -1324,12 +1340,19 @@ exports.DoPackage = function(params) {
 
     // 写入新区块
     MC_AddNewBlock(JSON.stringify(block))
+
+    // 刷新世界缓存
+    MC_DeleteCacheByPrefix("worldStatus")
+    Testin.BuildWorldStatus({
+        LoadCache : false
+    })
+
     console.log("新区块写入完成：" + block.Number)
 }
 
 /*
 {
-    "Hash" : "HiThisIsTestinProject",
+    "Hash" : "e6ce8e4fcd93226d57aab1da604556e82847f5cada574a554eddbbd4618ea577",
     "PreviousHash" : "",
     "Number" : "1",
     "Transactions" : [],

@@ -79,6 +79,15 @@ func (feService *FeService) Proxy(res http.ResponseWriter, req *http.Request) {
 		"Params":   string(paramsJSONString),
 		"BcagName": "test",
 	}
+	// 如果批量提交参数存在，就构建批量提交的脚本：
+	if reqParams["ParamBatch"] != nil {
+		submitBody["ParamBatch"] = []string{}
+		for i := 0; i < len(reqParams["ParamBatch"].([]interface{})); i++ {
+			p := reqParams["ParamBatch"].([]interface{})[i]
+			paramBatchJSONstring, _ := json.Marshal(p)
+			submitBody["ParamBatch"] = append(submitBody["ParamBatch"].([]string), string(paramBatchJSONstring))
+		}
+	}
 
 	// 构造向sdk发送请求的requester
 	bodyJSON, _ := json.Marshal(submitBody)

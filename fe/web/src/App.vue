@@ -16,9 +16,10 @@
     </v-app-bar>
     
     <v-navigation-drawer
-      
+      app
       temporary
-      absolute
+      fixed
+      hide-overlay
       v-model="drawer"
     >
       <v-list>

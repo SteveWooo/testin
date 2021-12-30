@@ -28,8 +28,6 @@ func (m *Miner) Build(config map[string]string) {
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println(worldStatus.Enterprises[0])
-	// fmt.Println(m.config["nodeID"])
 
 	m.WorldStatus = &worldStatus
 }
@@ -54,7 +52,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 
 		// 2 获取意向列表，进行本地Repuation排行，发布计算出来的第一名声誉节点到远程节点上
 		for {
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second * 1)
 			err := m.PoBR_SendRepuationRank(Term)
 			if err != nil {
 				fmt.Println(err)
@@ -65,7 +63,7 @@ func (m *Miner) RunProofOfBussinessReputation() {
 			// 如果自己是第一名，那就打包
 			// 不是的话，就直接进入监听最新区块事件
 			for {
-				time.Sleep(time.Second * 2)
+				time.Sleep(time.Second * 1)
 				// 有可能因为获取到的缓存数据不到2/3，导致计算失败
 				rank1MaxMiner, err := m.PoBR_GetMaxReputationMiner(Term)
 				if err != nil {

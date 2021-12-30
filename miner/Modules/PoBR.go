@@ -43,6 +43,7 @@ func (m *Miner) PoBR_SendRepuationRank(Term int) error {
 	}
 
 	// 参与联盟共识的节点必须是miner列表之中的节点才行
+	// fmt.Println(pis, m.WorldStatus.Miners)
 	ledgePisCount := 0
 	for i := 0; i < len(pis); i++ {
 		for k := 0; k < len(m.WorldStatus.Miners); k++ {

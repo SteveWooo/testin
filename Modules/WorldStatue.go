@@ -42,6 +42,7 @@ func (w *WorldStatus) Build(config map[string]string) {
 
 // 获取节点上构建好的世界状态，并构建本地状态
 func (w *WorldStatus) FetchWorldStatus() error {
+	w.cleanStatus()
 	prefix := "worldStatus"
 	cacheResp, err := sdkApi.GetCacheByPerfix(w.config, prefix)
 	if err != nil {
@@ -61,6 +62,8 @@ func (w *WorldStatus) FetchWorldStatus() error {
 	if err != nil {
 		return errors.New("worldStatus JSON格式化失败: " + err.Error())
 	}
+
+	// fmt.Println(remoteStatusString)
 
 	// 逐个载入
 	for index, val := range remoteStatus {
@@ -152,6 +155,7 @@ func (w *WorldStatus) cleanStatus() {
 	w.Tasks = []*Transaction.Task{}
 	w.TaskHackers = []*Transaction.TaskHacker{}
 	w.Reputations = map[string]float64{}
+	w.Miners = []string{}
 }
 
 // 读取交易数据，写入世界状态。

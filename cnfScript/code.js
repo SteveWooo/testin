@@ -25,85 +25,93 @@ var Status = {
 }
 
 var Testin = {
-    // 全量读取区块，构造整体的世界状态。非常耗性能，上线时必须做缓存处理
-    BuildWorldStatus : function(param){
-        function loadTrans(trans){
-            if (trans.Type == "RegisterHacker") {
-                Status.Hackers.push(trans.Hacker)
-            }
-            if (trans.Type == "RegisterEnterprise") {
-                Status.Enterprises.push(trans.Enterprise)
-            }
-            if (trans.Type == "RegisterExpert") {
-                Status.Experts.push(trans.Expert)
-            }
-            if (trans.Type == "PublishTaskByEnterprise") {
-                Status.Tasks.push(trans.Task)
-            }
-            if (trans.Type == "ApplyTaskByHacker") {
-                Status.TaskHackers.push(trans.TaskHacker)
-            }
-            if (trans.Type == "AuthorizationHackerToTaskByEnterprise") {
-                for (var i=0;i<Status.TaskHackers.length;i++) {
-                    if (Status.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID && Status.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID) {
-                        Status.TaskHackers[i].IsPermission = "true"
-                        // Status.TaskHackers[i].ExpertList = ["047204499d849948aaffdec7ce2703f5b3"] // hard code
-                        Status.TaskHackers[i].ExpertList = [] // 改成任何人都可以评价
-                        Status.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
-                    }
+    // 把交易数据加载到全局变量Status中
+    loadTrans : function(trans){
+        if (trans.Type == "RegisterHacker") {
+            Status.Hackers.push(trans.Hacker)
+        }
+        if (trans.Type == "RegisterEnterprise") {
+            Status.Enterprises.push(trans.Enterprise)
+        }
+        if (trans.Type == "RegisterExpert") {
+            Status.Experts.push(trans.Expert)
+        }
+        if (trans.Type == "PublishTaskByEnterprise") {
+            Status.Tasks.push(trans.Task)
+        }
+        if (trans.Type == "ApplyTaskByHacker") {
+            Status.TaskHackers.push(trans.TaskHacker)
+        }
+        if (trans.Type == "AuthorizationHackerToTaskByEnterprise") {
+            for (var i=0;i<Status.TaskHackers.length;i++) {
+                if (Status.TaskHackers[i].TaskID == trans.AuthorizationHackerToTaskByEnterprise.TaskID && Status.TaskHackers[i].From == trans.AuthorizationHackerToTaskByEnterprise.HackerID) {
+                    Status.TaskHackers[i].IsPermission = "true"
+                    // Status.TaskHackers[i].ExpertList = ["047204499d849948aaffdec7ce2703f5b3"] // hard code
+                    Status.TaskHackers[i].ExpertList = [] // 改成任何人都可以评价
+                    Status.TaskHackers[i].PermissionInformation = trans.AuthorizationHackerToTaskByEnterprise.PermissionInformation
                 }
             }
-            if (trans.Type == "PublishReportByHacker" ) {
-                for (var i=0;i<Status.TaskHackers.length;i++) {
-                    if (Status.TaskHackers[i].TaskID == trans.TaskHackerReport.TaskID && Status.TaskHackers[i].From == trans.TaskHackerReport.From) {
-                        Status.TaskHackers[i].ReportPath = trans.TaskHackerReport.ReportPath
-                        // 同时清空专家评审信息
-                        Status.TaskHackers[i].ExpertReviewReports = []
-                        break
-                    }
-                }
-            }
-
-            // 调整信誉值
-            if (trans.Type == "ReviewReportByExpert" ) {
-                for (var i=0;i<Status.TaskHackers.length;i++) {
-                    if (Status.TaskHackers[i].TaskID == trans.ExpertReviewReport.TaskID && Status.TaskHackers[i].From == trans.ExpertReviewReport.HackerID) {
-                        Status.TaskHackers[i].ExpertReviewReports.push(trans.ExpertReviewReport)
-                        if(Status.Reputations[trans.ExpertReviewReport.From] == undefined) {
-                            Status.Reputations[trans.ExpertReviewReport.From] = 0.0
-                        }
-                        Status.Reputations[trans.ExpertReviewReport.From] = Status.Reputations[trans.ExpertReviewReport.From] + 1.0
-                        
-                        break
-                    }
+        }
+        if (trans.Type == "PublishReportByHacker" ) {
+            for (var i=0;i<Status.TaskHackers.length;i++) {
+                if (Status.TaskHackers[i].TaskID == trans.TaskHackerReport.TaskID && Status.TaskHackers[i].From == trans.TaskHackerReport.From) {
+                    Status.TaskHackers[i].ReportPath = trans.TaskHackerReport.ReportPath
+                    // 同时清空专家评审信息
+                    Status.TaskHackers[i].ExpertReviewReports = []
+                    break
                 }
             }
         }
 
-        var topBlock = JSON.parse(MC_GetTopBlock())
-        var worldStatus = MC_GetCache("worldStatus")
-        if(worldStatus == "") {
-            var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
-            for (var i=0;i<blocks.length;i++) {
-                var block = JSON.parse(blocks[i])
-                // 加载区块矿工，调整信誉值
-                Status.Reputations[block.Miner] = 0.0
-                for (k=0;k<block.Transactions.length;k++) {
-                    // 构建黑客身份状态
-                    var trans = block.Transactions[k]
-                    loadTrans(trans)
+        // 调整信誉值
+        if (trans.Type == "ReviewReportByExpert" ) {
+            for (var i=0;i<Status.TaskHackers.length;i++) {
+                if (Status.TaskHackers[i].TaskID == trans.ExpertReviewReport.TaskID && Status.TaskHackers[i].From == trans.ExpertReviewReport.HackerID) {
+                    Status.TaskHackers[i].ExpertReviewReports.push(trans.ExpertReviewReport)
+                    if(Status.Reputations[trans.ExpertReviewReport.From] == undefined) {
+                        Status.Reputations[trans.ExpertReviewReport.From] = 0.0
+                    }
+                    Status.Reputations[trans.ExpertReviewReport.From] = Status.Reputations[trans.ExpertReviewReport.From] + 1.0
+                    
+                    break
                 }
             }
+        }
+    },
 
+    // 加载一个区块，把区块内的交易信息加载到全局中去
+    loadBlock : function(blockJSON) {
+        var block = JSON.parse(blockJSON)
+        // 加载区块矿工，调整信誉值
+        if(block.Miner.length == 34) { // 防止加载第一个区块的空矿工
+            Status.Reputations[block.Miner] = 0.0 // 成功出块的矿工信誉值归零。TODO : 这里需要兑换成虚拟货币
+        }
+        for (k=0;k<block.Transactions.length;k++) {
+            // 构建黑客身份状态
+            var trans = block.Transactions[k]
+            Testin.loadTrans(trans)
+        }
+    },
+
+    // 全量读取区块，构造整体的世界状态。非常耗性能，上线时必须做缓存处理
+    BuildWorldStatus : function(param){ 
+        var worldStatus = MC_GetCache("worldStatus")
+        if(worldStatus == "") { // 这种就是网络启动的时候会调用一次
             // 初始化矿工信誉值
             for(var i=0;i<Status.Miners.length;i++) {
                 if (Status.Reputations[Status.Miners[i]] == undefined) {
                     Status.Reputations[Status.Miners[i]] = 0.0
                 }
             }
+            var topBlock = JSON.parse(MC_GetTopBlock())
+            var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
+            for (var i=0;i<blocks.length;i++) {
+                Testin.loadBlock(blocks[i])
+            }
+
 
             MC_SetCache("worldStatus", JSON.stringify(Status))
-        } else {
+        } else { // 这里比较常被调用
             Status = JSON.parse(worldStatus)
         }
 
@@ -111,14 +119,22 @@ var Testin = {
         // 这里不需要考虑缓存交易中存在 注册企业+发布任务 这种交易组合
         // 因为发布任务的交易，不能在注册企业被上链之前认可
         if (param != undefined && param.LoadCache == true) {
+            var topBlock = JSON.parse(MC_GetTopBlock())
             transCache = MC_GetCacheByPrefix("transCache-" + (parseInt(topBlock.Number) + 1) + "-")
             transCache = JSON.parse(transCache)
             for (var i=0;i<transCache.length;i++) {
                 var trans = JSON.parse(transCache[i])
-                loadTrans(trans)
+                Testin.loadTrans(trans)
             }
         }
         // console.log(JSON.stringify(Status))
+    },
+
+    // 动态规划最新区块数据
+    AppendNewBlockToWorldStatus : function(blockJSON){
+        MC_DeleteCacheByPrefix("worldStatus")
+        Testin.loadBlock(blockJSON)
+        MC_SetCache("worldStatus", JSON.stringify(Status))
     },
 
     // 共识过程中出现的操作类
@@ -1354,18 +1370,14 @@ exports.DoPackage = function(params) {
     }
 
     // 删除以往的所有相关缓存，防止缓存冗余
-    MC_DeleteCacheByPrefix("transCache-" + topBlock.Number + "-") // 删除交易缓存
+    MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存
     MC_DeleteCacheByPrefix("packageIntentionCache-") // 删除Intention缓存
     MC_DeleteCacheByPrefix("packageIntentionRankCache-") // 删除Intention排行缓存
 
     // 写入新区块
     MC_AddNewBlock(JSON.stringify(block))
-
-    // 刷新世界缓存
-    MC_DeleteCacheByPrefix("worldStatus")
-    Testin.BuildWorldStatus({
-        LoadCache : false
-    })
+    // 刷新世界状态缓存数据
+    Testin.AppendNewBlockToWorldStatus(JSON.stringify(block))
 
     console.log("新区块写入完成：" + block.Number)
 }

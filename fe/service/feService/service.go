@@ -32,7 +32,10 @@ func (feService *FeService) Build() {
 	// worldStatus.DoBuildStatus()
 	feService.WorldStatus = &worldStatus
 
-	feService.WorldStatus.FetchWorldStatus()
+	err := feService.WorldStatus.FetchWorldStatus()
+	if err != nil {
+		fmt.Println("世界状态获取异常：" + err.Error())
+	}
 }
 
 func (feService *FeService) Run() {

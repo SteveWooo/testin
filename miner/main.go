@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	Modules "github.com/stevewooo/testin/Modules"
-	Transaction "github.com/stevewooo/testin/Modules/Transaction"
 	Sign "github.com/stevewooo/testin/Modules/Utils/Sign"
 	argvs "github.com/stevewooo/testin/Modules/Utils/argvs"
 	MinerModules "github.com/stevewooo/testin/miner/Modules"
@@ -27,9 +25,6 @@ func buildRunScript() {
 func main() {
 	// buildRunScript()
 	// return
-	var trans Modules.ConsensusStorageData
-	trans = new(Transaction.Transaction)
-	trans.LoadFromJSONString("{}")
 
 	config := map[string]string{
 		"bcagName": "test",

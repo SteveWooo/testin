@@ -1,22 +1,27 @@
 // 整体状态的数据结构
 var Status = {
     // 指定挖矿账号（后续应该由代表专家来做）
+    // Miners : ["047204499d849948aaffdec7ce2703f5b3","0433cd50fa5977da115025e90cf5698c08",
+    // "043abf9b64da3cf82a6833d827a6a60cb1","04c52654247aa39be86b5ce356ac7e24f8",
+    // "0492ec813ab9ce7c94e49c84abcb0c7d64","049075a782f699fd18ca64cf7ccb0b7ef5",
+    // "0429285759acca19681489804066c123fe","04b291af0ad8ed77f167d2d89da6dd310a",
+    // "04ae7e5a2f9b426f0f18df1f4629e408ad","043f7acc95c1bf43ebd4bb7313979f427e",
+    // "04961d37561a0cb5f8efaf95b555943b77","04bde666ba0e9078328897a8087cccc14a",
+    // "041ba0e83f3e7962a388f5c0296ccacfe5","04d1f611569df79cff3d05a6aa8553bc7e",
+    // "0475bb62e72d9fe2d92e542ee4f7aefd24","045ff90b3a6ea54f58178aeb4a6c60f81c",
+    // "04f4b26de40eb5fc31bca10918bf414d41","04cb4cbd636d6694e4f992f54f65f1daa8",
+    // "04cf8554facafcac058c70aa6ffc38a139","0458df0e6a93a464ca2de7fd4a13049b5b"],
     Miners : ["047204499d849948aaffdec7ce2703f5b3","0433cd50fa5977da115025e90cf5698c08",
     "043abf9b64da3cf82a6833d827a6a60cb1","04c52654247aa39be86b5ce356ac7e24f8",
-    "0492ec813ab9ce7c94e49c84abcb0c7d64","049075a782f699fd18ca64cf7ccb0b7ef5",
-    "0429285759acca19681489804066c123fe","04b291af0ad8ed77f167d2d89da6dd310a",
-    "04ae7e5a2f9b426f0f18df1f4629e408ad","043f7acc95c1bf43ebd4bb7313979f427e",
-    "04961d37561a0cb5f8efaf95b555943b77","04bde666ba0e9078328897a8087cccc14a",
-    "041ba0e83f3e7962a388f5c0296ccacfe5","04d1f611569df79cff3d05a6aa8553bc7e",
-    "0475bb62e72d9fe2d92e542ee4f7aefd24","045ff90b3a6ea54f58178aeb4a6c60f81c",
-    "04f4b26de40eb5fc31bca10918bf414d41","04cb4cbd636d6694e4f992f54f65f1daa8",
-    "04cf8554facafcac058c70aa6ffc38a139","0458df0e6a93a464ca2de7fd4a13049b5b"],
+    "0492ec813ab9ce7c94e49c84abcb0c7d64"],
 
     Hackers : [],
     Experts : [],
     Enterprises : [],
     Tasks : [],
     TaskHackers : [],
+
+    Reputations : {}
 }
 
 var Testin = {
@@ -58,10 +63,17 @@ var Testin = {
                     }
                 }
             }
+
+            // 调整信誉值
             if (trans.Type == "ReviewReportByExpert" ) {
                 for (var i=0;i<Status.TaskHackers.length;i++) {
                     if (Status.TaskHackers[i].TaskID == trans.ExpertReviewReport.TaskID && Status.TaskHackers[i].From == trans.ExpertReviewReport.HackerID) {
                         Status.TaskHackers[i].ExpertReviewReports.push(trans.ExpertReviewReport)
+                        if(Status.Reputations[trans.ExpertReviewReport.From] == undefined) {
+                            Status.Reputations[trans.ExpertReviewReport.From] = 0.0
+                        }
+                        Status.Reputations[trans.ExpertReviewReport.From] = Status.Reputations[trans.ExpertReviewReport.From] + 1.0
+                        
                         break
                     }
                 }
@@ -74,11 +86,19 @@ var Testin = {
             var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
             for (var i=0;i<blocks.length;i++) {
                 var block = JSON.parse(blocks[i])
-                // TODO：加载区块矿工，调整信誉值
+                // 加载区块矿工，调整信誉值
+                Status.Reputations[block.Miner] = 0.0
                 for (k=0;k<block.Transactions.length;k++) {
                     // 构建黑客身份状态
                     var trans = block.Transactions[k]
                     loadTrans(trans)
+                }
+            }
+
+            // 初始化矿工信誉值
+            for(var i=0;i<Status.Miners.length;i++) {
+                if (Status.Reputations[Status.Miners[i]] == undefined) {
+                    Status.Reputations[Status.Miners[i]] = 0.0
                 }
             }
 

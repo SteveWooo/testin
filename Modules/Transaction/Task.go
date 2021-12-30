@@ -1,5 +1,7 @@
 package Transaction
 
+import "encoding/json"
+
 // 测试员对象
 type Task struct {
 	Budget                string
@@ -15,6 +17,11 @@ type Task struct {
 
 	IsPublic    string
 	TaskHackers []*TaskHacker // 测试实例列表（测试员列表）
+}
+
+func (obj *Task) LoadFromInterface(i interface{}) {
+	jsonByte, _ := json.Marshal(i)
+	_ = json.Unmarshal(jsonByte, obj)
 }
 
 // 测试员子对象
@@ -35,6 +42,11 @@ type TaskHacker struct {
 	Negotiations        []*TaskNegotiation    // 协商过程
 
 	Hacker *Hacker // 关联信息
+}
+
+func (obj *TaskHacker) LoadFromInterface(i interface{}) {
+	jsonByte, _ := json.Marshal(i)
+	_ = json.Unmarshal(jsonByte, obj)
 }
 
 // 专家报告子子对象

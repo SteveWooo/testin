@@ -68,7 +68,7 @@ func (m *Miner) PoBR_SendRepuationRank(Term int) error {
 		if pis[i].Intention != "true" {
 			continue
 		}
-		for nid, score := range m.WorldStatus.Repuations {
+		for nid, score := range m.WorldStatus.Reputations {
 			if pis[i].From == nid {
 				ranker = append(ranker, map[string]interface{}{
 					"nodeID":    nid,
@@ -234,8 +234,11 @@ func (m *Miner) PoBR_CheckIsFinishedPackage() error {
 		remoteTopBlockNumber, _ := strconv.Atoi(remoteTopBlock.Number)
 		if remoteTopBlockNumber > localTopBlockNumber {
 			fmt.Println("完成打包，区块编号: " + remoteTopBlock.Number)
+
+			// 直接拉最新worldStatus即可
 			m.WorldStatus.AddNewLocalBlock(remoteTopBlock)
-			m.WorldStatus.DoBuildStatus()
+			// m.WorldStatus.DoBuildStatus()
+			m.WorldStatus.FetchWorldStatus()
 			break
 		}
 

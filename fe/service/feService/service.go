@@ -28,10 +28,11 @@ func (feService *FeService) Build() {
 
 	worldStatus := Modules.WorldStatus{}
 	worldStatus.Build(feService.config)
-	worldStatus.FetchAllBlocks()
-	worldStatus.DoBuildStatus()
-
+	// worldStatus.FetchAllBlocks()
+	// worldStatus.DoBuildStatus()
 	feService.WorldStatus = &worldStatus
+
+	feService.WorldStatus.FetchWorldStatus()
 }
 
 func (feService *FeService) Run() {
@@ -143,8 +144,9 @@ func (feService *FeService) GetWorldStatus(res http.ResponseWriter, req *http.Re
 	}
 
 	// TODO 优化
-	feService.WorldStatus.FetchAllBlocks()
-	feService.WorldStatus.DoBuildStatus()
+	// feService.WorldStatus.FetchAllBlocks()
+	// feService.WorldStatus.DoBuildStatus()
+	feService.WorldStatus.FetchWorldStatus()
 
 	resp := HttpResponser{}
 	resp.Build()
@@ -204,8 +206,9 @@ func (feService *FeService) GetEnterprisePublishedTask(res http.ResponseWriter, 
 	}
 
 	// TODO 优化
-	feService.WorldStatus.FetchAllBlocks()
-	feService.WorldStatus.DoBuildStatus()
+	// feService.WorldStatus.FetchAllBlocks()
+	// feService.WorldStatus.DoBuildStatus()
+	feService.WorldStatus.FetchWorldStatus()
 
 	// 筛选需要的内容
 	status := feService.WorldStatus.GetWorldStatus()
@@ -287,8 +290,9 @@ func (feService *FeService) GetTask(res http.ResponseWriter, req *http.Request) 
 	}
 
 	// TODO 优化
-	feService.WorldStatus.FetchAllBlocks()
-	feService.WorldStatus.DoBuildStatus()
+	// feService.WorldStatus.FetchAllBlocks()
+	// feService.WorldStatus.DoBuildStatus()
+	feService.WorldStatus.FetchWorldStatus()
 
 	// 筛选需要的内容
 	status := feService.WorldStatus.GetWorldStatus()
@@ -350,8 +354,9 @@ func (feService *FeService) GetTaskDetail(res http.ResponseWriter, req *http.Req
 	}
 
 	// TODO 优化
-	feService.WorldStatus.FetchAllBlocks()
-	feService.WorldStatus.DoBuildStatus()
+	// feService.WorldStatus.FetchAllBlocks()
+	// feService.WorldStatus.DoBuildStatus()
+	feService.WorldStatus.FetchWorldStatus()
 
 	// 查找任务
 	var task *Transaction.Task = nil

@@ -93,27 +93,35 @@ var Testin = {
         }
     },
 
+    // 读取所有区块，重新构建一个Status出来
+    reloadAllBlock : function(){
+        for(var i=0;i<Status.Miners.length;i++) {
+            if (Status.Reputations[Status.Miners[i]] == undefined) {
+                Status.Reputations[Status.Miners[i]] = 0.0
+            }
+        }
+        var topBlock = JSON.parse(MC_GetTopBlock())
+        var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
+        for (var i=0;i<blocks.length;i++) {
+            Testin.loadBlock(blocks[i])
+        }
+    },
+
     // 全量读取区块，构造整体的世界状态。非常耗性能，上线时必须做缓存处理
     BuildWorldStatus : function(param){ 
         var worldStatus = MC_GetCache("worldStatus")
         if(worldStatus == "") { // 这种就是网络启动的时候会调用一次
             // 初始化矿工信誉值
-            for(var i=0;i<Status.Miners.length;i++) {
-                if (Status.Reputations[Status.Miners[i]] == undefined) {
-                    Status.Reputations[Status.Miners[i]] = 0.0
-                }
-            }
-            var topBlock = JSON.parse(MC_GetTopBlock())
-            var blocks = MC_GetBlockByRange(1, parseInt(topBlock.Number))
-            for (var i=0;i<blocks.length;i++) {
-                Testin.loadBlock(blocks[i])
-            }
-
-
+            Testin.reloadAllBlock()
             MC_SetCache("worldStatus", JSON.stringify(Status))
         } else { // 这里比较常被调用
             Status = JSON.parse(worldStatus)
         }
+
+        // 有时候需要重新构造一次区块数据，比如更新算法后
+        // if (param != undefined && param.ReloadAllBlock == true) {
+        //     Testin.ReloadAllBlock()
+        // }
 
         // 缓存中的合法交易也要加入其中，防止交易重复提交
         // 这里不需要考虑缓存交易中存在 注册企业+发布任务 这种交易组合
@@ -1204,7 +1212,6 @@ exports.DoPackageIntention = function(params) {
 // 矿工节点收集到2/3个打包意向后，对有意向的出块者进行排名，广播第一名出来
 // @params.From
 // @params.Rank_1 string,string 第一名的NodeID，可用逗号分隔并列，并列NodeID通过哈希环随机算法进行排序
-// @params.
 exports.ShareIntentionRank = function(params){
     var intentionRank = Testin.Consensus.IntentionRank.New(params.IntentionRank)
     if (intentionRank.CheckSign() == false ) {
@@ -1314,6 +1321,24 @@ function getMinerOfThisRound(term){
     var randomMinerIndex = MC_Mod(hashRangeStartNum, rank1MaxMiner.length)
 
     return rank1MaxMiner[randomMinerIndex]
+}
+
+// 1 master端收到request，就广播preprepare，让每个节点都缓存
+// 一个preprepare包
+exports.DoPBFTPreprepare = function(params) {
+
+}
+
+// 2 矿工持续监听preprepare包，如果有，就拉下来签名，并发布prepare包
+exports.DoPBFTPrepare = function(params) {
+
+}
+
+// 3 矿工发布prepare包后，持续监听prepare包，当prepare包达到2/3个数量时
+// 就发布commit包，然后监听最新区块
+// DoPBFTCommit 每次被调用，就查看缓存中commit是否达到2/3，如果达到2/3，就addNewBlock
+exports.DoPBFTCommit = function(params) {
+
 }
 
 // 新区块

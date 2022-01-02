@@ -46,12 +46,12 @@ function doPost(index){
         data["Params"]["Signature"] = signature
 
         // 批量生成
-        for(var i=0;i<10;i++) {
+        for(var i=0;i<30;i++) {
             var tempParam = {
                 "MC_Call" : "PublishReportByHacker", // 调用合约脚本
                 From: "04527ac664e9b0141a4a5a059b65d9341a",
                 ReportPath: "QmNnGUHwagNAzhBUwGvsfCMvuVKfL294eKPu1r2juXVN3J",
-                TaskID: "5b319ed10a9197f7cc49e8ddbbfa94af10026c061050b530461b42eed4fcefd8",
+                TaskID: "00beb23a7695df15839c6dcf787b1ada2836f5d91cd437c7921563218d720480",
                 Ts: now.toString()
             }
             tempParam["Ts"] = (parseInt(now) + i).toString()

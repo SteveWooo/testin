@@ -72,7 +72,7 @@ func (a *Analysis) CalculateTpsPerBlock() {
 
 	var tpsDrawer Drawer = Drawer{}
 	tpsDrawer.YLabel = "TPS (transaction per second)"
-	tpsDrawer.Build("bussiness_tps", []float64{0, 0, 15, 300})
+	tpsDrawer.Build("bussiness_tps", []float64{0, 0, 40, 100})
 	tpsDrawer.SetPoint(tpsPoints, "tps")
 	tpsDrawer.DoDraw()
 }

@@ -46,7 +46,8 @@ func main() {
 	miner.Build(config)
 
 	// go miner.Run()
-	go miner.RunProofOfBussinessReputation()
+	// go miner.RunProofOfBussinessReputation()
+	go miner.RunPBFT()
 
 	c := make(chan bool, 1)
 	<-c

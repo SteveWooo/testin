@@ -1326,19 +1326,40 @@ function getMinerOfThisRound(term){
 // 1 master端收到request，就广播preprepare，让每个节点都缓存
 // 一个preprepare包
 exports.DoPBFTPreprepare = function(params) {
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
+
+    // 简单做算了
+    var prepreParePack = params.PrepreParePack
+    MC_SetCache("PBFTPrepreParePack-" + (parseInt(topBlock.Number) + 1) + "-" + prepreParePack.Hash, JSON.stringify(prepreParePack))
 
 }
 
 // 2 矿工持续监听preprepare包，如果有，就拉下来签名，并发布prepare包
 exports.DoPBFTPrepare = function(params) {
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
 
+    // 简单做算了
+    var preParePack = params.PreparePack
+    MC_SetCache("PBFTPreparePack-" + (parseInt(topBlock.Number) + 1) + "-" + preParePack.Hash + "-" + preParePack.From, JSON.stringify(preParePack))
 }
 
 // 3 矿工发布prepare包后，持续监听prepare包，当prepare包达到2/3个数量时
 // 就发布commit包，然后监听最新区块
 // DoPBFTCommit 每次被调用，就查看缓存中commit是否达到2/3，如果达到2/3，就addNewBlock
 exports.DoPBFTCommit = function(params) {
+    var topBlock = MC_GetTopBlock()
+    topBlock = JSON.parse(topBlock)
 
+    // 简单做算了
+    var commit = params.CommitPack
+    MC_SetCache("PBFTCommitPack-" + (parseInt(topBlock.Number) + 1) + "-" + commit.Hash + "-" + commit.From, JSON.stringify(commit))
+
+    // 检查是否达到 2/3，到达就直接写块。矿工直接读块
+
+    // 删除缓存的时候，要把commit以往的所有区块的缓存都删除掉
+    // 因为由于这里读到2/3个包后就出块，肯定会冗余一些的缓存包的
 }
 
 // 新区块

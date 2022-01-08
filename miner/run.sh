@@ -13,6 +13,7 @@ function onCtrlC() {
 ./bin/miner --privateKey a29e2136e7f5b6de2d8205195a819bd2bda3a38d6e5ebb07ff3ee80b20dbd486 &
 ./bin/miner --privateKey 98cf0979e72aabae9e192fae13f46a135c5fbad0ac719b979d007b27a7b85fbf &
 ./bin/miner --privateKey b7c03347692d8632cdc11aae9d458db1b13783477560c2f51fed424ac2a469ad &
+
 # ./bin/miner --privateKey 797d861b693d1292e0af37861aa997afe96e1118c8c98f3f60155e797924698d &
 # ./bin/miner --privateKey 6be56c87f8ac72722dbb8af867d1004f0b4a29af39fdcede44d43a7893d89519 &
 # ./bin/miner --privateKey 149a34fd946f645d5f7dd4ba47cb1988e9047636e6236e7d0473eb3064fa41e3 &

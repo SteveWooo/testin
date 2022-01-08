@@ -53,6 +53,11 @@ func (feService *FeService) Run() {
 	// http.Handle("/static/", http.StripPrefix("/static/", fs))
 	webFs := http.FileServer(http.Dir("web/dist/"))
 	http.Handle("/", http.StripPrefix("/", webFs))
+	http.HandleFunc("/personal-center", feService.ProxyToWebIndex)
+	http.HandleFunc("/task", feService.ProxyToWebIndex)
+	http.HandleFunc("/register", feService.ProxyToWebIndex)
+	http.HandleFunc("/task-publish", feService.ProxyToWebIndex)
+	http.HandleFunc("/task-list", feService.ProxyToWebIndex)
 
 	fmt.Println("Http service listened at : " + feService.config["httpPort"])
 	// 启动HTTP服务

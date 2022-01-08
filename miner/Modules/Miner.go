@@ -96,24 +96,75 @@ func (m *Miner) RunPBFT() {
 
 		// 指定唯一矿佬
 		if m.config["nodeID"] == "047204499d849948aaffdec7ce2703f5b3" {
-			// 检查区块编号，拉交易
-			remoteTopBlock := m.WorldStatus.GetRemoteTopBlock()
-			remoteBlockNumber, _ := strconv.Atoi(remoteTopBlock.Number)
-			localTopBlock := m.WorldStatus.GetLocalTopBlock()
-			localBlockNumber, _ := strconv.Atoi(localTopBlock.Number)
-			if localBlockNumber == remoteBlockNumber { // 区块合法，拉缓存交易
-				trans, err := m.WorldStatus.GetRemoteTransactionCache()
+			err := m.PBFT_DoPreprePare()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+		}
+
+		for {
+			// 监听preprepare，数量充足后，打包成preprepare
+			time.Sleep(1 * time.Second)
+
+			prepreParePackCache, err := m.PBFT_GetRemotePrePreparePackCache()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			if len(prepreParePackCache) == 0 {
+				fmt.Println("暂无preprePare包")
+				continue
+			}
+			// preprepare包只会有一个
+			err = prepreParePackCache[0].CheckMinerSign()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			for {
+				// 打包PreprePare包
+				time.Sleep(1 * time.Second)
+				err := m.PBFT_DoPrepare(prepreParePackCache[0])
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
-				fmt.Println(trans)
 
-				// 发送preprepare
+				// 持续获取prepare包
+				for {
+					time.Sleep(1 * time.Second)
+					preparePackCache, err := m.PBFT_GetRemotePreparePackCache()
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
+					if len(preparePackCache) == 0 {
+						fmt.Println("暂无prepare包")
+						continue
+					}
+					// 排重数数
+					minCount := m.PBFT_GetMinCandicateCount()
+					if len(preparePackCache) < int(minCount) {
+						continue
+					}
+
+					// commit完就直接读块，读到新块就更新本地区块缓存，重启流程
+					for {
+						time.Sleep(1 * time.Second)
+						err := m.PBFT_DoCommit(preparePackCache[0]) // 拿一个包去构建
+						if err != nil {
+							continue
+						}
+						// 持续拉取最新区块，检查更新
+					}
+				}
+				break
 			}
-		}
+			break
 
-		// 监听preprepare，数量充足后，打包成preprepare
+		}
 
 	}
 }

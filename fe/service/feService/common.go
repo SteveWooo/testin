@@ -1,6 +1,15 @@
 package feService
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+)
+
+func (service *FeService) ProxyToWebIndex(res http.ResponseWriter, req *http.Request) {
+	indexFile, _ := ioutil.ReadFile("./web/dist/index.html")
+	res.Write(indexFile)
+}
 
 type HttpResponser struct {
 	Status  int

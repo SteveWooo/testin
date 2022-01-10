@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/stevewooo/testin/Modules/SdkApi"
 	"github.com/stevewooo/testin/Modules/Transaction"
@@ -27,6 +28,10 @@ func (m *Miner) PBFT_DoPreprePare() error {
 		trans, err := m.WorldStatus.GetRemoteTransactionCache()
 		if err != nil {
 			return err
+		}
+
+		if len(trans) == 0 {
+			return errors.New("无交易")
 		}
 
 		// 构建，发送preprepare
@@ -269,6 +274,21 @@ func (p *PBFT_Prepare) CheckSign() error {
 // Commit阶段
 
 func (m *Miner) PBFT_DoCommit(prepare *PBFT_Prepare) error {
+	commitPack := PBFT_Commit{}
+	commitPack.BuildFromPrepare(prepare)
+	commitPack.From = m.config["nodeID"]
+	commitPack.Sign(m.config["privateKey"])
+
+	callDoPackResp, err := SdkApi.CallTrans(m.config, map[string]interface{}{
+		"MC_Call":    "DoPBFTCommit",
+		"CommitPack": commitPack,
+	})
+	if err != nil {
+		return err
+	}
+	if callDoPackResp.Status != 2000 {
+		return errors.New("sdk报错：" + callDoPackResp.Message)
+	}
 	return nil
 }
 
@@ -333,5 +353,34 @@ func (p *PBFT_Commit) CheckSign() error {
 	if recoverNodeID[0:34] != p.From {
 		return errors.New("签名校验失败")
 	}
+	return nil
+}
+
+// 持续向节点获取最新区块，检查是否已经完成打包
+func (m *Miner) PBFT_CheckIsFinishedPackage() error {
+	localTopBlock := m.WorldStatus.GetLocalTopBlock() // 先获取打包前的本地最高区块
+	for {
+		time.Sleep(1 * time.Second)
+		remoteTopBlock := m.WorldStatus.GetRemoteTopBlock()
+		localTopBlockNumber, _ := strconv.Atoi(localTopBlock.Number)
+		remoteTopBlockNumber, _ := strconv.Atoi(remoteTopBlock.Number)
+		if remoteTopBlockNumber > localTopBlockNumber {
+			fmt.Println("完成打包，区块编号: " + remoteTopBlock.Number)
+
+			// 直接拉最新worldStatus即可
+			m.WorldStatus.AddNewLocalBlock(remoteTopBlock)
+			// m.WorldStatus.DoBuildStatus()
+			m.WorldStatus.FetchWorldStatus()
+			break
+		}
+
+		if remoteTopBlockNumber == localTopBlockNumber {
+			fmt.Println("远程节点共识打包中...")
+			continue
+		}
+
+		panic("远程节点区块编号比本地低，请确认节点配置")
+	}
+
 	return nil
 }

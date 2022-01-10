@@ -31,6 +31,7 @@ func main() {
 		// "sdkRpcServer": "http://192.168.10.45:9024",
 		"sdkRpcServer": "http://127.0.0.1:9024",
 		// "privateKey":   "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6",
+		"consensusMode": "PoBR",
 	}
 
 	// 通过启动参数输入privateKey:
@@ -41,13 +42,26 @@ func main() {
 	}
 	config["privateKey"] = argv.Get("privateKey")
 
+	if argv.Get("sdkRpcServer") != "" {
+		config["sdkRpcServer"] = argv.Get("sdkRpcServer")
+	}
+
+	if argv.Get("consensusMode") != "" {
+		config["consensusMode"] = argv.Get("consensusMode")
+	}
+
 	config["nodeID"] = Sign.GetPublicKey(config["privateKey"])[0:34]
 	miner := MinerModules.Miner{}
 	miner.Build(config)
 
 	// go miner.Run()
-	// go miner.RunProofOfBussinessReputation()
-	go miner.RunPBFT()
+	if config["consensusMode"] == "PoBR" {
+		go miner.RunProofOfBussinessReputation()
+	}
+
+	if config["consensusMode"] == "PBFT" {
+		go miner.RunPBFT()
+	}
 
 	c := make(chan bool, 1)
 	<-c

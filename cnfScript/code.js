@@ -1352,14 +1352,66 @@ exports.DoPBFTCommit = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
+    Testin.BuildWorldStatus({
+        LoadCache : false
+    })
+
     // 简单做算了
     var commit = params.CommitPack
+
+    // 区块已经更新，不需要重新打包
+    if (parseInt(topBlock.Number) + 1 != parseInt(commit.Number)) {
+        return 
+    }
+
     MC_SetCache("PBFTCommitPack-" + (parseInt(topBlock.Number) + 1) + "-" + commit.Hash + "-" + commit.From, JSON.stringify(commit))
 
     // 检查是否达到 2/3，到达就直接写块。矿工直接读块
+    var commitPacks = MC_GetCacheByPrefix("PBFTCommitPack-" + (parseInt(topBlock.Number) + 1) + "-")
+    commitPacks = JSON.parse(commitPacks)
+    var minPackCount = Math.floor(Status.Miners.length * 2/3) + 1
+    if(commitPacks.length < minPackCount) {
+        return 
+    }
+
+    var block = Testin.Class.Block.New(params.CommitPack)
+    block.Signature = block.MinerSignature
+    block.Ts = (+new Date()).toString()
+    delete block.MinerSignature
+    delete block.From
+
+    // 计算共识过程因广播而产生的byte
+    var totalByte = 0
+    var cacheByte = {}
+    cacheByte["preprepare"] = MC_GetCacheByPrefix("PBFTPreparePack-" + (parseInt(topBlock.Number) + 1))
+    cacheByte["prepare"] = MC_GetCacheByPrefix("PBFTPrepreParePack-" + (parseInt(topBlock.Number) + 1))
+    cacheByte["commit"] = MC_GetCacheByPrefix("PBFTCommitPack-" + (parseInt(topBlock.Number) + 1))
+    // 删除掉交易部分
+    for(var index in cacheByte) {
+        cacheByte[index] = JSON.parse(cacheByte[index])
+        for (var i=0;i<cacheByte[index].length;i++) {
+            var cache = JSON.parse(cacheByte[index][i])
+            delete cache.Transactions
+            totalByte = totalByte + JSON.stringify(cache).length
+        }
+    }
+
+    block.TotalByte = totalByte.toString()
 
     // 删除缓存的时候，要把commit以往的所有区块的缓存都删除掉
     // 因为由于这里读到2/3个包后就出块，肯定会冗余一些的缓存包的
+    MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存
+    MC_DeleteCacheByPrefix("PBFTCommitPack-")
+    MC_DeleteCacheByPrefix("PBFTPrepreParePack-")
+    MC_DeleteCacheByPrefix("PBFTPreparePack-")
+
+    // 写入新区块
+    MC_AddNewBlock(JSON.stringify(block))
+    // 刷新世界状态缓存数据
+    Testin.AppendNewBlockToWorldStatus(JSON.stringify(block))
+
+    console.log("新区块写入完成：" + block.Number)
+
 }
 
 // 新区块
@@ -1414,6 +1466,23 @@ exports.DoPackage = function(params) {
     for (var i=0;i<block.Transactions.length;i++) {
         block.Transactions[i].Nonce = i + ""
     }
+
+    // 计算共识过程因广播而产生的byte
+    var totalByte = 0
+    var cacheByte = {}
+    cacheByte["intention"] = MC_GetCacheByPrefix("packageIntentionCache-" + (parseInt(topBlock.Number) + 1))
+    cacheByte["intentionRank"] = MC_GetCacheByPrefix("packageIntentionRankCache-" + (parseInt(topBlock.Number) + 1))
+    // 删除掉交易部分
+    for(var index in cacheByte) {
+        cacheByte[index] = JSON.parse(cacheByte[index])
+        for (var i=0;i<cacheByte[index].length;i++) {
+            var cache = JSON.parse(cacheByte[index][i])
+            delete cache.Transactions
+            totalByte = totalByte + JSON.stringify(cache).length
+        }
+    }
+
+    block.TotalByte = totalByte.toString()
 
     // 删除以往的所有相关缓存，防止缓存冗余
     MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存

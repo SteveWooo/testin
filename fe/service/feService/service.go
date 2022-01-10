@@ -12,6 +12,7 @@ import (
 	Modules "github.com/stevewooo/testin/Modules"
 	Transaction "github.com/stevewooo/testin/Modules/Transaction"
 	Sign "github.com/stevewooo/testin/Modules/Utils/Sign"
+	"github.com/stevewooo/testin/Modules/Utils/argvs"
 )
 
 type FeService struct {
@@ -20,11 +21,18 @@ type FeService struct {
 }
 
 func (feService *FeService) Build() {
+	var argv argvs.Argv
+	argv.Load()
+
 	feService.config = map[string]string{}
 	feService.config["httpPort"] = "10001"
 	feService.config["bcagName"] = "test"
 	// feService.config["sdkRpcServer"] = "http://192.168.10.45:9024"
 	feService.config["sdkRpcServer"] = "http://127.0.0.1:9024"
+	// feService.config["sdkRpcServer"] = "http://192.168.10.202:9024"
+	if argv.Get("sdkRpcServer") != "" {
+		feService.config["sdkRpcServer"] = argv.Get("sdkRpcServer")
+	}
 
 	worldStatus := Modules.WorldStatus{}
 	worldStatus.Build(feService.config)
@@ -51,10 +59,10 @@ func (feService *FeService) Run() {
 	// 管理静态文件目录
 	// fs := http.FileServer(http.Dir("static/"))
 	// http.Handle("/static/", http.StripPrefix("/static/", fs))
-	webFs := http.FileServer(http.Dir("web/dist/"))
+	webFs := http.FileServer(http.Dir("../fe/web/dist/"))
 	http.Handle("/", http.StripPrefix("/", webFs))
 	http.HandleFunc("/personal-center", feService.ProxyToWebIndex)
-	http.HandleFunc("/task", feService.ProxyToWebIndex)
+	http.HandleFunc("/task/", feService.ProxyToWebIndex)
 	http.HandleFunc("/register", feService.ProxyToWebIndex)
 	http.HandleFunc("/task-publish", feService.ProxyToWebIndex)
 	http.HandleFunc("/task-list", feService.ProxyToWebIndex)

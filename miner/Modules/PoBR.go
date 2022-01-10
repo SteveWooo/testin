@@ -219,7 +219,7 @@ func (m *Miner) PoBR_DoPackage(Term int) error {
 		if packageErr == nil {
 			break
 		}
-		fmt.Println(packageErr)
+		// fmt.Println(packageErr)
 	}
 
 	return nil
@@ -244,7 +244,7 @@ func (m *Miner) PoBR_CheckIsFinishedPackage() error {
 		}
 
 		if remoteTopBlockNumber == localTopBlockNumber {
-			fmt.Println("远程节点共识打包中...")
+			// fmt.Println("远程节点共识打包中...")
 			continue
 		}
 

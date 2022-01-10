@@ -7,7 +7,7 @@ import (
 )
 
 func (service *FeService) ProxyToWebIndex(res http.ResponseWriter, req *http.Request) {
-	indexFile, _ := ioutil.ReadFile("./web/dist/index.html")
+	indexFile, _ := ioutil.ReadFile("../fe/web/dist/index.html")
 	res.Write(indexFile)
 }
 

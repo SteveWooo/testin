@@ -3,7 +3,10 @@ const secp = require("../fe/web/node_modules/@noble/secp256k1")
 const crypto = require("../fe/web/node_modules/crypto-js")
 
 var config = {
-    PrivateKey : "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad4"
+    // PrivateKey : "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad4",
+    PrivateKey : "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad3",
+
+    TaskID : "69ed39489b89d104bd429de0d1202ddc060cc06ddc7d0f4f901676d218012329"
 }
 var utils = {
     Sign : async function(message, pk) {
@@ -29,9 +32,10 @@ function doPost(index){
         var data = {
             "Params" : {
                 "MC_Call" : "PublishReportByHacker", // 调用合约脚本
-                From: "04527ac664e9b0141a4a5a059b65d9341a",
+                From: "0402e7ebab98d26359b235dd0405c6fb86",
                 ReportPath: "QmNnGUHwagNAzhBUwGvsfCMvuVKfL294eKPu1r2juXVN3J",
-                TaskID: "5e92caae6c838770d9d887a4687eb0bb0f37616dabfb12077578ad0380ca3cda",
+                // TaskID: "d66a43d5f4165769a277d0f01fbf2af5faf9999ce25ce04316a42a27b6d3014e",
+                TaskID : config.TaskID,
                 Ts: now.toString()
             },
             "ParamBatch" : []
@@ -46,12 +50,13 @@ function doPost(index){
         data["Params"]["Signature"] = signature
 
         // 批量生成
-        for(var i=0;i<30;i++) {
+        for(var i=0;i<10;i++) {
             var tempParam = {
                 "MC_Call" : "PublishReportByHacker", // 调用合约脚本
-                From: "04527ac664e9b0141a4a5a059b65d9341a",
+                From: "0402e7ebab98d26359b235dd0405c6fb86",
                 ReportPath: "QmNnGUHwagNAzhBUwGvsfCMvuVKfL294eKPu1r2juXVN3J",
-                TaskID: "00beb23a7695df15839c6dcf787b1ada2836f5d91cd437c7921563218d720480",
+                // TaskID: "56d8c9fc346bec5fdea30f5d4c8811a5f9ea0d6838cb8d6a9950c2afdac55874",
+                TaskID : config.TaskID,
                 Ts: now.toString()
             }
             tempParam["Ts"] = (parseInt(now) + i).toString()
@@ -63,7 +68,8 @@ function doPost(index){
             data["ParamBatch"].push(tempParam)
         }
         var option = {
-            hostname : "localhost",
+            // hostname : "localhost",
+            hostname : "192.168.10.202",
             path : "/api/proxy",
             port : 10001,
             method : "POST",

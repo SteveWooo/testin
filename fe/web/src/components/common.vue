@@ -8,7 +8,9 @@ import * as cryptoJS from 'crypto-js'
 // const IPFS_GATEWAY = "http://192.168.10.45:8081"
 
 // localhost
-const BASE_URL = "http://127.0.0.1:10001"
+// const BASE_URL = "http://127.0.0.1:10001"
+const BASE_URL = ""
+
 const IPFS_API_HOST = "127.0.0.1"
 const IPFS_API_PORT = 5001
 const IPFS_GATEWAY = "http://127.0.0.1:8081"

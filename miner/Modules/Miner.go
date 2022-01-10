@@ -113,7 +113,7 @@ func (m *Miner) RunPBFT() {
 				continue
 			}
 			if len(prepreParePackCache) == 0 {
-				fmt.Println("暂无preprePare包")
+				// fmt.Println("暂无preprePare包")
 				continue
 			}
 			// preprepare包只会有一个
@@ -158,7 +158,10 @@ func (m *Miner) RunPBFT() {
 							continue
 						}
 						// 持续拉取最新区块，检查更新
+						m.PBFT_CheckIsFinishedPackage()
+						break
 					}
+					break
 				}
 				break
 			}

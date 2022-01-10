@@ -4,9 +4,16 @@ go build -o ./bin/miner ./main.go
 trap "onCtrlC" SIGINT
 function onCtrlC() {
     ps | grep ./bin/miner | grep -v grep | awk '{print $1}' | xargs kill -9
+    ps | grep ../fe/service/main.go | grep -v grep | awk '{print $1}' | xargs kill -9
     echo "已关闭所有miner节点服务"
     exit
 }
+
+go run ../fe/service/main.go & 
+sleep 2
+# 激活 worldStatue
+curl -H "Content-Type: application/json" -X POST -d '{"Params":{"MC_Call":"RegisterHacker","Name":"1","Resume":"1","Qualification":"1","Ts":"1641791156056","From":"04527ac664e9b0141a4a5a059b65d9341a","Hash":"da21caecd385da13df1ba5e2f550eeef17aab33fe4bf72a1f6f6d48afaf0fc71","Signature":"1b443ad4455961c25d8c2aae97a1cd3c28469290e47e737bd153b29e280f5804bf2841c9e8079f6ecedcd96c87b2d8dd10fa835bfa4000d135bf0954abbdb0aaf4"}}' http://localhost:10001/api/proxy
+echo "==== WorldStatus已激活 ===="
 
 ./bin/miner --privateKey 8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6 &
 ./bin/miner --privateKey 469ef6e06a15d66135732ffde307a63573529150d2e3cc1399f0d21285fba017 &

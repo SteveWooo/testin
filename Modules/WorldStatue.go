@@ -51,6 +51,7 @@ func (w *WorldStatus) FetchWorldStatus() error {
 	if cacheResp.Status != 2000 {
 		return errors.New("Sdk报错：" + cacheResp.Message)
 	}
+	// fmt.Println(cacheResp)
 
 	if len(cacheResp.Data.(map[string]interface{})["Caches"].([]interface{})) == 0 {
 		return errors.New("worldStatus构造失败，节点尚未完成初始化")

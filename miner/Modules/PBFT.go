@@ -375,7 +375,7 @@ func (m *Miner) PBFT_CheckIsFinishedPackage() error {
 		}
 
 		if remoteTopBlockNumber == localTopBlockNumber {
-			fmt.Println("远程节点共识打包中...")
+			// fmt.Println("远程节点共识打包中...")
 			continue
 		}
 

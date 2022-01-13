@@ -15,11 +15,11 @@ sleep 2
 curl -H "Content-Type: application/json" -X POST -d '{"Params":{"MC_Call":"RegisterHacker","Name":"1","Resume":"1","Qualification":"1","Ts":"1641791156056","From":"04527ac664e9b0141a4a5a059b65d9341a","Hash":"da21caecd385da13df1ba5e2f550eeef17aab33fe4bf72a1f6f6d48afaf0fc71","Signature":"1b443ad4455961c25d8c2aae97a1cd3c28469290e47e737bd153b29e280f5804bf2841c9e8079f6ecedcd96c87b2d8dd10fa835bfa4000d135bf0954abbdb0aaf4"}}' http://localhost:10001/api/proxy
 echo "==== WorldStatus已激活 ===="
 
-./bin/miner --privateKey 8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6 &
-./bin/miner --privateKey 469ef6e06a15d66135732ffde307a63573529150d2e3cc1399f0d21285fba017 &
-./bin/miner --privateKey a29e2136e7f5b6de2d8205195a819bd2bda3a38d6e5ebb07ff3ee80b20dbd486 &
-./bin/miner --privateKey 98cf0979e72aabae9e192fae13f46a135c5fbad0ac719b979d007b27a7b85fbf &
-./bin/miner --privateKey b7c03347692d8632cdc11aae9d458db1b13783477560c2f51fed424ac2a469ad &
+./bin/miner --privateKey 8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad6 --consensusMode PBFT  &
+./bin/miner --privateKey 469ef6e06a15d66135732ffde307a63573529150d2e3cc1399f0d21285fba017 --consensusMode PBFT  &
+./bin/miner --privateKey a29e2136e7f5b6de2d8205195a819bd2bda3a38d6e5ebb07ff3ee80b20dbd486 --consensusMode PBFT  &
+./bin/miner --privateKey 98cf0979e72aabae9e192fae13f46a135c5fbad0ac719b979d007b27a7b85fbf --consensusMode PBFT  &
+./bin/miner --privateKey b7c03347692d8632cdc11aae9d458db1b13783477560c2f51fed424ac2a469ad --consensusMode PBFT  &
 
 # ./bin/miner --privateKey 797d861b693d1292e0af37861aa997afe96e1118c8c98f3f60155e797924698d &
 # ./bin/miner --privateKey 6be56c87f8ac72722dbb8af867d1004f0b4a29af39fdcede44d43a7893d89519 &

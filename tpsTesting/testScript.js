@@ -6,7 +6,7 @@ var config = {
     // PrivateKey : "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad4",
     PrivateKey : "8e1e5e540a07954e07a840d89eeed064b58ec16346b118ca6ad25831211f2ad3",
 
-    TaskID : "69ed39489b89d104bd429de0d1202ddc060cc06ddc7d0f4f901676d218012329"
+    TaskID : "4a1933725ca09570cdd5e3715aaabaa7cbf1b13d676774d09ffd1dc1b21ed3c1"
 }
 var utils = {
     Sign : async function(message, pk) {
@@ -50,7 +50,7 @@ function doPost(index){
         data["Params"]["Signature"] = signature
 
         // 批量生成
-        for(var i=0;i<10;i++) {
+        for(var i=0;i<15;i++) {
             var tempParam = {
                 "MC_Call" : "PublishReportByHacker", // 调用合约脚本
                 From: "0402e7ebab98d26359b235dd0405c6fb86",

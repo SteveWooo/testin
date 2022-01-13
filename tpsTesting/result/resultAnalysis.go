@@ -6,16 +6,16 @@ import (
 
 func main() {
 	analysisPoBR := modules.Analysis{}
-	analysisPoBR.LoadAllBlocks("./block_PoBR_10per.json")
+	analysisPoBR.LoadAllBlocks("./block_PoBR_15per_allTrans.json")
 	analysisPoBR.CalculateDatasPerBlockAndSet()
 
 	analysisPBFT := modules.Analysis{}
-	analysisPBFT.LoadAllBlocks("./block_PBFT_10per.json")
+	analysisPBFT.LoadAllBlocks("./block_PBFT_15per_allTrans.json")
 	analysisPBFT.CalculateDatasPerBlockAndSet()
 
 	tpsDrawer := modules.Drawer{}
 	tpsDrawer.YLabel = "Tps (Transaction per second)"
-	tpsDrawer.Build("img-Tps between PBFT and PoBR", []float64{0, 0, 15, 250})
+	tpsDrawer.Build("img-Tps between PBFT and PoBR", []float64{0, 0, 20, 250})
 	tpsDrawer.SetPoint(analysisPoBR.TpsPoints, "Tps of PoBR")
 	tpsDrawer.SetPoint(analysisPBFT.TpsPoints, "Tps of PBFT")
 	tpsDrawer.DoDraw()

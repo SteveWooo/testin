@@ -107,6 +107,20 @@ var Testin = {
         }
     },
 
+    // 把合法交易纺织到内存中
+    SetTransactionCache : function(trans) {
+        MC_SetCache("transCache-" + trans.Hash, JSON.stringify(trans))
+    },
+
+    // 获取缓存中所有交易
+    DeleteTransactionCache : function(trans){
+        var keys = []
+        for(var i=0;i<trans.length;i++) {
+            keys.push("transCache-" + trans[i].Hash)
+        }
+        MC_BatchDeleteCache(keys)
+    },
+
     // 全量读取区块，构造整体的世界状态。非常耗性能，上线时必须做缓存处理
     BuildWorldStatus : function(param){ 
         var worldStatus = MC_GetCache("worldStatus")
@@ -953,8 +967,9 @@ exports.RegisterHacker = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 注册成为企业
@@ -984,8 +999,9 @@ exports.RegisterEnterprise = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 注册成为专家
@@ -1015,8 +1031,9 @@ exports.RegisterExpert = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 企业发布任务
@@ -1045,8 +1062,9 @@ exports.PublishTaskByEnterprise = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 测试员申请任务
@@ -1075,8 +1093,9 @@ exports.ApplyTaskByHacker = function(params){
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 企业授权测试员
@@ -1105,8 +1124,9 @@ exports.AuthorizationHackerToTaskByEnterprise = function(params){
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 测试员提交报告
@@ -1135,8 +1155,9 @@ exports.PublishReportByHacker = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 专家评审报告
@@ -1166,8 +1187,9 @@ exports.ReviewReportByExpert = function(params) {
     var topBlock = MC_GetTopBlock()
     topBlock = JSON.parse(topBlock)
 
-    var thisBlockNumber = parseInt(topBlock.Number) + 1
-    MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    // var thisBlockNumber = parseInt(topBlock.Number) + 1
+    // MC_SetCache("transCache-" + thisBlockNumber + "-" + trans.Hash, JSON.stringify(trans))
+    Testin.SetTransactionCache(trans)
 }
 
 // 企业认领报告
@@ -1400,7 +1422,9 @@ exports.DoPBFTCommit = function(params) {
 
     // 删除缓存的时候，要把commit以往的所有区块的缓存都删除掉
     // 因为由于这里读到2/3个包后就出块，肯定会冗余一些的缓存包的
-    MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存
+    // MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存
+    Testin.DeleteTransactionCache(block.Transactions)
+
     MC_DeleteCacheByPrefix("PBFTCommitPack-")
     MC_DeleteCacheByPrefix("PBFTPrepreParePack-")
     MC_DeleteCacheByPrefix("PBFTPreparePack-")
@@ -1485,7 +1509,9 @@ exports.DoPackage = function(params) {
     block.TotalByte = totalByte.toString()
 
     // 删除以往的所有相关缓存，防止缓存冗余
-    MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存
+    // MC_DeleteCacheByPrefix("transCache-") // 删除交易缓存
+    Testin.DeleteTransactionCache(block.Transactions)
+
     MC_DeleteCacheByPrefix("packageIntentionCache-") // 删除Intention缓存
     MC_DeleteCacheByPrefix("packageIntentionRankCache-") // 删除Intention排行缓存
 

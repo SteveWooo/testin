@@ -338,9 +338,11 @@ func (w *WorldStatus) GetRemoteTransactionCache() ([]*Transaction.Transaction, e
 		panic("远程区块不存在，本地缓存区块获取失败")
 	}
 
-	localTopBlockNumber, _ := strconv.Atoi(localTopBlock.Number)
-	newBlockNumber := strconv.Itoa(localTopBlockNumber + 1)
-	prefix := "transCache-" + newBlockNumber + "-"
+	// localTopBlockNumber, _ := strconv.Atoi(localTopBlock.Number)
+	// newBlockNumber := strconv.Itoa(localTopBlockNumber + 1)
+	// prefix := "transCache-" + newBlockNumber + "-"
+	// 尝试直接获取交易内容
+	prefix := "transCache-"
 	transResp, err := sdkApi.GetCacheByPerfix(w.config, prefix)
 	if err != nil {
 		return nil, errors.New("获取远程区块缓存失败")

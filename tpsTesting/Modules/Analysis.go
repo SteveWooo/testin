@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"golang.org/x/image/font/opentype"
 	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/font"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
@@ -189,6 +191,17 @@ func (drawer *Drawer) Build(filename string, rect []float64) {
 	drawer.fileName = filename
 	drawer.rect = make([]float64, 4)
 	drawer.rect = rect
+	ttfBytes, _ := ioutil.ReadFile("./simhei.ttf")
+	fontTTF, _ := opentype.Parse(ttfBytes)
+	simhei := font.Font{Typeface: "simhei"}
+	font.DefaultCache.Add([]font.Face{
+		{
+			Font: simhei,
+			Face: fontTTF,
+		},
+	})
+	plot.DefaultFont = simhei
+	plotter.DefaultFont = simhei
 }
 
 func (drawer *Drawer) SetPoint(point plotter.XYs, name string) {
@@ -212,7 +225,7 @@ func (drawer *Drawer) SetPoint(point plotter.XYs, name string) {
 
 func (drawer *Drawer) DoDraw() {
 	plt := plot.New()
-	plt.X.Label.Text = "Block Number"
+	plt.X.Label.Text = "区块数量"
 	plt.Y.Label.Text = drawer.YLabel
 	var err error
 	plt.Y.Min, plt.X.Min, plt.Y.Max, plt.X.Max = drawer.rect[0], drawer.rect[1], drawer.rect[2], drawer.rect[3]
